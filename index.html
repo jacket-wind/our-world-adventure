@@ -1,0 +1,3475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Our World Adventure — Starter</title>
+<style>
+  :root{
+    --blue:#0e5aa7; --blue2:#1b7ad6; --orange:#ff9800; --orange2:#ffb547;
+    --green:#2fa84f; --red:#e74c3c; --sand:#fff7e6; --ink:#223a5e;
+    --card:#ffffff; --shadow:0 6px 0 rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    background:linear-gradient(180deg,#bfe6ff 0%, #e3f4ff 45%, #fff7e6 100%);
+    color:var(--ink); min-height:100vh; touch-action:manipulation;
+  }
+  #app{max-width:960px;margin:0 auto;padding:10px 12px 60px;}
+  .screen{display:none;animation:fadeIn .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  h1,h2,h3,.titlefont{font-family:'Comic Sans MS','Comic Sans','Segoe UI',sans-serif;}
+
+  /* ---------- generic buttons ---------- */
+  .btn{
+    display:inline-block;border:none;cursor:pointer;font-family:inherit;
+    font-size:22px;font-weight:700;color:#fff;border-radius:18px;padding:14px 30px;
+    background:linear-gradient(180deg,var(--orange2),var(--orange));
+    box-shadow:var(--shadow); transition:transform .08s;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.12);}
+  .btn.blue{background:linear-gradient(180deg,#2f8de4,var(--blue));}
+  .btn.green{background:linear-gradient(180deg,#43c463,var(--green));}
+  .btn.small{font-size:17px;padding:9px 18px;border-radius:14px;}
+  .btn.round{border-radius:50%;width:58px;height:58px;padding:0;font-size:26px;display:flex;align-items:center;justify-content:center;}
+  .btn:disabled{opacity:.5;cursor:default;}
+
+  /* ---------- title screen ---------- */
+  #s-title{text-align:center;padding-top:34px;}
+  .big-globe{font-size:110px;display:inline-block;animation:floaty 3s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+  .game-title{font-size:46px;margin:6px 0 2px;color:var(--blue);text-shadow:2px 2px 0 #fff, 4px 4px 0 rgba(0,0,0,.08);}
+  .game-sub{font-size:20px;color:#5b7aa3;margin:0 0 8px;font-weight:600;}
+  .zh-note{color:#8a6d3b;background:#fff3cf;border:2px dashed #f0c14b;border-radius:14px;
+    display:inline-block;padding:8px 16px;font-size:16px;margin:10px 0 18px;line-height:1.6;}
+  .skills-row{font-size:30px;letter-spacing:6px;margin:8px 0 20px;}
+
+  /* ---------- header bar ---------- */
+  .topbar{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;}
+  .topbar .spacer{flex:1;}
+  .pill{background:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:16px;
+        box-shadow:0 3px 0 rgba(0,0,0,.1);white-space:nowrap;}
+  .iconbtn{background:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:21px;
+        cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.1);}
+
+  /* ---------- map ---------- */
+  .sea-band{background:linear-gradient(180deg,#2f8de4,#7cc4f5);border-radius:22px;padding:18px 12px 22px;
+    box-shadow:inset 0 0 0 5px rgba(255,255,255,.35), 0 8px 0 rgba(0,0,0,.08); position:relative;overflow:hidden;}
+  .sea-band .wave{position:absolute;font-size:26px;opacity:.5;animation:floaty 4s ease-in-out infinite;}
+  .map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;position:relative;z-index:1;}
+  @media (max-width:560px){.map-grid{grid-template-columns:repeat(2,1fr);}}
+  .node{
+    background:var(--card);border-radius:18px;padding:12px 8px 10px;text-align:center;cursor:pointer;
+    border:4px solid transparent;box-shadow:0 5px 0 rgba(0,0,0,.15);font-family:inherit;transition:transform .1s;
+  }
+  .node:active{transform:scale(.96);}
+  .node .n-num{display:inline-block;background:var(--orange);color:#fff;font-weight:800;border-radius:50%;
+      width:34px;height:34px;line-height:34px;font-size:18px;margin-bottom:2px;}
+  .node .n-emoji{font-size:44px;line-height:1.15;display:block;}
+  .node .n-title{display:block;font-weight:800;font-size:16px;color:var(--blue);font-family:'Comic Sans MS',sans-serif;}
+  .node .n-stars{display:block;font-size:14px;letter-spacing:1px;margin-top:3px;min-height:18px;}
+  .node.locked{filter:grayscale(1);opacity:.55;cursor:not-allowed;}
+  .node.done{border-color:var(--green);}
+  .node.done .n-num{background:var(--green);}
+  .node.current{border-color:var(--orange);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 5px 0 rgba(0,0,0,.15),0 0 0 0 rgba(255,152,0,.5);}
+    50%{box-shadow:0 5px 0 rgba(0,0,0,.15),0 0 0 12px rgba(255,152,0,0);}}
+  .badge{position:absolute;top:-10px;right:-8px;font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));}
+  .map-tip{text-align:center;color:#5b7aa3;font-size:14px;margin-top:10px;}
+  .reset-link{display:block;text-align:center;margin-top:14px;color:#98a9c0;font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;}
+  /* level picker */
+  .level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:600px;margin:18px auto 6px;}
+  @media (max-width:520px){.level-grid{grid-template-columns:repeat(3,1fr);}}
+  .lv-card{background:#fff;border:4px solid #dfeaf7;border-radius:18px;padding:12px 6px;cursor:pointer;
+      box-shadow:0 5px 0 rgba(0,0,0,.12);font-family:inherit;text-align:center;transition:transform .1s;}
+  .lv-card:active{transform:scale(.95);}
+  .lv-card .lv-emoji{font-size:34px;display:block;}
+  .lv-card .lv-name{display:block;font-weight:800;color:var(--blue);font-size:15px;font-family:'Comic Sans MS',sans-serif;}
+  .lv-card small{display:block;color:#98a9c0;font-size:11px;margin-top:2px;}
+  .lvlocked{filter:grayscale(1);opacity:.55;cursor:not-allowed;}
+  .lvshake{animation:shake .4s;}
+
+  /* ---------- unit screen ---------- */
+  .unit-head{display:flex;align-items:center;gap:14px;background:#fff;border-radius:20px;padding:12px 16px;
+    box-shadow:0 5px 0 rgba(0,0,0,.1);margin-bottom:12px;}
+  .unit-head .u-emoji{font-size:52px;}
+  .unit-head h2{margin:0;font-size:28px;color:var(--blue);}
+  .unit-head .u-zh{color:#8a6d3b;font-size:15px;margin-top:2px;}
+  .wall-title{font-weight:800;color:#5b7aa3;margin:14px 4px 8px;font-size:17px;}
+  .wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+  .wcard{background:#fff;border-radius:16px;border:3px solid #dfeaf7;padding:10px 4px;text-align:center;cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);transition:transform .1s;}
+  .wcard:active{transform:scale(.94);}
+  .wcard .w-emoji{font-size:40px;display:block;}
+  .wcard .w-word{font-weight:800;font-size:16px;color:var(--ink);font-family:'Comic Sans MS',sans-serif;}
+  .wcard.heard{border-color:var(--green);background:#eafbef;}
+  .stage-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px;}
+  @media (max-width:520px){.stage-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
+  .stage-card{background:#fff;border-radius:20px;padding:16px 10px;text-align:center;cursor:pointer;border:4px solid transparent;
+    box-shadow:0 6px 0 rgba(0,0,0,.12);font-family:inherit;transition:transform .1s;}
+  .stage-card:active{transform:scale(.95);}
+  .stage-card .st-emoji{font-size:46px;}
+  .stage-card .st-name{font-weight:800;font-size:19px;color:var(--blue);margin-top:4px;font-family:'Comic Sans MS',sans-serif;}
+  .stage-card .st-stars{font-size:18px;margin-top:4px;letter-spacing:2px;}
+
+  /* ---------- quiz ---------- */
+  .quiz-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .quiz-instr{flex:1;text-align:center;background:#fff;border-radius:14px;padding:9px 10px;font-weight:800;
+      color:var(--blue);font-size:19px;box-shadow:0 4px 0 rgba(0,0,0,.08);font-family:'Comic Sans MS',sans-serif;}
+  .dots{display:flex;gap:6px;justify-content:center;margin:2px 0 14px;}
+  .dot{width:14px;height:14px;border-radius:50%;background:#d7e4f2;}
+  .dot.done{background:var(--green);}
+  .dot.now{background:var(--orange);animation:pulse 1.4s infinite;}
+  .q-center{text-align:center;}
+  .q-pic{font-size:120px;line-height:1.2;display:inline-block;filter:drop-shadow(0 6px 4px rgba(0,0,0,.15));}
+  .q-pic.small-emo{font-size:64px;}
+  .q-word-big{font-size:56px;font-weight:800;color:var(--blue);font-family:'Comic Sans MS',sans-serif;margin:10px 0;}
+  .q-sent-big{font-size:34px;font-weight:800;color:var(--blue);font-family:'Comic Sans MS',sans-serif;margin:10px 0;line-height:1.35;}
+  .q-gap{height:10px;}
+  .opts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:560px;margin:0 auto;}
+  .opt{background:#fff;border:4px solid #dfeaf7;border-radius:20px;font-size:64px;padding:14px 6px;cursor:pointer;
+      line-height:1.15;box-shadow:0 5px 0 rgba(0,0,0,.1);transition:transform .08s;font-family:inherit;}
+  .opt .opt-word{display:block;font-size:24px;font-weight:800;color:var(--ink);font-family:'Comic Sans MS',sans-serif;}
+  .opt:active{transform:scale(.95);}
+  .opt.good{border-color:var(--green);background:#eafbef;animation:pop .3s;}
+  .opt.bad{border-color:var(--red);background:#fdeaea;animation:shake .4s;}
+  .opt.reveal{border-color:var(--green);background:#eafbef;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-6px);}80%{transform:translateX(6px);}}
+  .node.bad{animation:shake .4s;}
+  .slots.bad{animation:shake .4s;}
+  @keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .opts.words{grid-template-columns:repeat(2,1fr);}
+  .opts.words .opt{font-size:30px;padding:16px 8px;}
+  .opts.four{grid-template-columns:repeat(4,1fr);}
+  @media (max-width:520px){.opts.four{grid-template-columns:repeat(2,1fr);}.opts.four .opt{font-size:52px;}}
+  .yesno{display:flex;gap:18px;justify-content:center;}
+  .yesno .btn{min-width:130px;font-size:26px;}
+  .audio-big{background:#fff;border:none;border-radius:50%;width:86px;height:86px;font-size:40px;cursor:pointer;
+      box-shadow:0 6px 0 rgba(0,0,0,.12);margin:6px 0;}
+  .audio-big:active{transform:translateY(3px);}
+  .audio-big.playing{animation:pulse 1s infinite;}
+
+  /* tiles / slots */
+  .slots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0;min-height:64px;}
+  .slot{width:52px;height:60px;border-bottom:5px solid var(--blue);font-size:34px;font-weight:800;color:var(--blue);
+      display:flex;align-items:center;justify-content:center;font-family:'Comic Sans MS',sans-serif;cursor:pointer;
+      background:#ffffffaa;border-radius:8px 8px 0 0;}
+  .slot.sent{width:auto;min-width:52px;padding:0 10px;}
+  .tiles{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0 16px;}
+  .tile{width:56px;height:60px;border-radius:14px;border:none;font-size:30px;font-weight:800;color:#fff;
+      background:linear-gradient(180deg,#2f8de4,var(--blue));box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;
+      font-family:'Comic Sans MS',sans-serif;}
+  .tile.word{width:auto;min-width:56px;padding:0 14px;font-size:22px;}
+  .tile.empty{visibility:hidden;}
+  .tile:active{transform:translateY(3px);}
+  .tile.used{opacity:.25;pointer-events:none;}
+  .check-row{margin-top:4px;}
+  /* counting groups */
+  .group-emo{font-size:34px;line-height:1.35;letter-spacing:3px;display:inline-block;max-width:220px;word-break:break-all;}
+  /* memory match */
+  .mem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:430px;margin:0 auto;}
+  .mem-card{border:4px solid #dfeaf7;border-radius:16px;background:#fff;min-height:86px;font-size:40px;
+      display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.1);
+      font-family:'Comic Sans MS',sans-serif;font-weight:800;color:var(--blue);padding:6px;text-align:center;}
+  .mem-card .mem-word{font-size:22px;}
+  .mem-card.flip{border-color:var(--orange2);background:#fff8ea;}
+  .mem-card.done{border-color:var(--green);background:#eafbef;cursor:default;}
+  .seq-note{font-size:26px;font-weight:800;color:var(--blue);font-family:'Comic Sans MS',sans-serif;min-height:34px;}
+  /* story reading */
+  .story-box{background:#fff;border-radius:20px;padding:16px 20px;max-width:540px;margin:0 auto;
+      font-size:23px;line-height:1.65;color:var(--ink);font-family:'Comic Sans MS',sans-serif;
+      box-shadow:0 5px 0 rgba(0,0,0,.08);text-align:left;}
+  .flash-box{display:inline-block;background:#fff3cf;border:2px dashed #f0c14b;border-radius:14px;padding:10px 22px;
+      font-size:34px;font-weight:800;color:#8a6d3b;font-family:'Comic Sans MS',sans-serif;}
+
+  /* speak */
+  .speak-target{background:#fff;border-radius:24px;padding:20px;max-width:520px;margin:0 auto;box-shadow:0 6px 0 rgba(0,0,0,.1);}
+  .speak-emoji{font-size:86px;line-height:1.2;}
+  .speak-text{font-size:34px;font-weight:800;color:var(--blue);font-family:'Comic Sans MS',sans-serif;margin:6px 0 12px;}
+  .mic-btn{width:96px;height:96px;font-size:44px;border-radius:50%;border:none;background:linear-gradient(180deg,#ff6f6f,var(--red));
+      color:#fff;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.18);margin:8px 0;}
+  .mic-btn.listening{animation:pulse 1s infinite;background:linear-gradient(180deg,#43c463,var(--green));}
+  .speak-status{min-height:30px;font-size:19px;font-weight:700;color:#5b7aa3;}
+  .speak-heard{font-size:17px;color:#8a6d3b;min-height:22px;}
+  .selfcheck{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+  /* result */
+  #s-result{text-align:center;padding-top:30px;}
+  .result-emoji{font-size:96px;}
+  .result-stars{font-size:64px;letter-spacing:10px;margin:10px 0;min-height:80px;}
+  .result-stars .star{display:inline-block;opacity:0;transform:scale(0);}
+  .result-stars .star.on{animation:starIn .5s forwards;}
+  @keyframes starIn{0%{opacity:0;transform:scale(0) rotate(-40deg);}70%{transform:scale(1.3) rotate(8deg);}100%{opacity:1;transform:scale(1) rotate(0);}}
+  .result-msg{font-size:30px;font-weight:800;color:var(--blue);font-family:'Comic Sans MS',sans-serif;}
+
+  /* overlay */
+  .overlay{position:fixed;inset:0;background:rgba(20,40,70,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .overlay-card{background:#fff;border-radius:24px;max-width:480px;width:100%;padding:26px 22px;text-align:center;
+      box-shadow:0 10px 0 rgba(0,0,0,.2);animation:pop .35s;}
+  .overlay-card .oc-emoji{font-size:70px;}
+  .overlay-card h3{margin:6px 0;font-size:26px;color:var(--blue);}
+  .overlay-card p{font-size:16px;color:#5b7aa3;line-height:1.7;margin:8px 0 16px;}
+  .hidden{display:none !important;}
+
+  /* certificate */
+  #s-cert{text-align:center;padding-top:20px;}
+  .cert{background:linear-gradient(180deg,#fffdf5,#fff3cf);border:6px double #d9a520;border-radius:20px;
+      max-width:560px;margin:0 auto;padding:30px 18px;box-shadow:0 10px 0 rgba(0,0,0,.12);}
+  .cert .c-emoji{font-size:74px;}
+  .cert h2{color:#b07d10;font-size:30px;margin:8px 0 4px;}
+  .cert p{font-size:18px;color:#7a5c12;margin:6px 0;line-height:1.6;}
+
+  /* confetti */
+  .confetti-piece{position:fixed;top:-20px;width:12px;height:18px;z-index:99;pointer-events:none;
+      animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLE -->
+  <section id="s-title" class="screen active">
+    <span class="big-globe">🌍</span>
+    <h1 class="game-title">Our World Adventure</h1>
+    <p class="game-sub">Starter · Units 0–8 · Listen · Speak · Read · Write</p>
+    <div class="skills-row">🎧 🎤 📖 📚 🧩 ✏️</div>
+    <div class="zh-note">欢迎来到 Our World 探险世界！<br>
+      每一站完成 <b>听 · 说 · 读 · 阅读理解 · 语法 · 书写</b> 六个任务，收集星星；<br>
+      通关一个级别，解锁下一个级别。先选择你的级别吧！</div>
+    <div class="level-grid" id="level-grid"></div>
+  </section>
+
+  <!-- MAP -->
+  <section id="s-map" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" id="btn-home" title="Home">🏠</button>
+      <div class="spacer"></div>
+      <div class="pill" id="total-stars">⭐ 0</div>
+      <button class="iconbtn" id="btn-mute" title="Sound">🔊</button>
+    </div>
+    <div class="sea-band" id="sea-band">
+      <div class="map-grid" id="map-grid"></div>
+    </div>
+    <p class="map-tip">Finish all four skills on an island to unlock the next one! 🚢</p>
+    <button class="reset-link" id="btn-reset">↺ Start over</button>
+  </section>
+
+  <!-- UNIT -->
+  <section id="s-unit" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" id="btn-back-map" title="Map">🗺️</button>
+      <div class="spacer"></div>
+      <div class="pill" id="unit-stars">⭐ 0/12</div>
+    </div>
+    <div class="unit-head">
+      <span class="u-emoji" id="u-emoji">🎒</span>
+      <div>
+        <h2 id="u-title">Unit 1 · My School</h2>
+        <div class="u-zh" id="u-zh">主题：我的学校 — 先预习单词，再完成四个任务！</div>
+      </div>
+    </div>
+    <div class="wall-title">📖 Word Wall — tap to listen 👆</div>
+    <div class="wall" id="wall"></div>
+    <div class="stage-grid" id="stage-grid"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="s-quiz" class="screen">
+    <div class="quiz-bar">
+      <button class="iconbtn" id="btn-quit" title="Quit">✖️</button>
+      <div class="quiz-instr" id="quiz-instr">Listen and choose!</div>
+      <div class="pill" id="quiz-score">⭐ 0</div>
+    </div>
+    <div class="dots" id="dots"></div>
+    <div id="qarea"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="s-result" class="screen">
+    <div class="result-emoji" id="res-emoji">🎉</div>
+    <div class="result-msg" id="res-msg">Great job!</div>
+    <div class="result-stars" id="res-stars"></div>
+    <p class="zh-note" id="res-zh">太棒了！可以再玩一次，挑战更多星星哦！</p><br>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
+      <button class="btn small blue" id="res-replay">🔁 Play again</button>
+      <button class="btn small" id="res-next">Next ▶</button>
+      <button class="btn small green" id="res-map">🗺️ Map</button>
+    </div>
+  </section>
+
+  <!-- CERT -->
+  <section id="s-cert" class="screen">
+    <div class="cert">
+      <div class="c-emoji">🌍🏆</div>
+      <h2>World Explorer Certificate</h2>
+      <p>This certificate is awarded to<br><b style="font-size:24px;">OUR WORLD ADVENTURER</b></p>
+      <p>for finishing all 10 islands of<br>Our World Starter Adventure!<br>Listen · Speak · Read · Write</p>
+      <p style="font-size:26px;" id="cert-stars">⭐ 0</p>
+      <p>🎉 Congratulations! 🎉</p>
+    </div>
+    <br>
+    <button class="btn" id="cert-back">🗺️ Back to map</button>
+  </section>
+
+</div>
+
+<div class="overlay hidden" id="overlay"><div class="overlay-card" id="overlay-card"></div></div>
+
+<script>
+"use strict";
+/* =====================================================
+   Our World Adventure — Starter (2nd ed. Units 0–8)
+   ===================================================== */
+
+/* ---------------- DATA ---------------- */
+var EMOJI = {
+  hi:"👋", hello:"👋", goodbye:"🙋", boy:"👦", girl:"👧", teacher:"👩‍🏫", friend:"🤝",
+  pen:"🖊️", pencil:"✏️", book:"📕", bag:"🎒", chair:"🪑", ruler:"📏",
+  crayon:"🖍️", desk:"🗄️", paper:"📄", computer:"💻", map:"🗺️", clock:"🕐", picture:"🖼️",
+  ball:"⚽", doll:"🎎", car:"🚗", train:"🚂", teddy:"🧸", kite:"🪁",
+  balloon:"🎈", robot:"🤖", truck:"🚚",
+  red:"🔴", blue:"🔵", yellow:"🟡", green:"🟢",
+  mom:"👩", dad:"👨", brother:"👦", sister:"👧", grandma:"👵", grandpa:"👴",
+  father:"👨", mother:"👩", me:"🧒", baby:"👶", parents:"👨‍👩‍👧", photo:"📷",
+  nose:"👃", hand:"✋", arm:"💪", leg:"🦵", foot:"🦶", ear:"👂",
+  eye:"👁️", mouth:"👄", head:"👦",
+  elephant:"🐘", monkey:"🐒", tiger:"🐯", bird:"🐦", fish:"🐟", frog:"🐸",
+  crocodile:"🐊", giraffe:"🦒", hippo:"🦛", lion:"🦁", zebra:"🦓",
+  butterfly:"🦋", mountain:"⛰️", ocean:"🌊", river:"🏞️", rock:"🪨", tree:"🌳",
+  bush:"🌿", cloud:"☁️", flower:"🌸", moon:"🌙", star:"⭐", grass:"🌱", sun:"☀️",
+  apple:"🍎", banana:"🍌", bread:"🍞", milk:"🥛", juice:"🧃", egg:"🥚",
+  chicken:"🍗", cookie:"🍪", noodles:"🍜", rice:"🍚", water:"💧",
+  hat:"👒", shirt:"👕", jacket:"🧥", shoes:"👟", socks:"🧦", dress:"👗",
+  coat:"🧥", pants:"👖", shorts:"🩳", skirt:"🩱",
+  sunny:"☀️", rainy:"🌧️", windy:"🌬️", snowy:"❄️", hot:"🔥", cold:"🧊",
+  crown:"👑", king:"🤴", prince:"👦", princess:"👧", queen:"👸",
+  bathroom:"🛁", bed:"🛏️", bedroom:"🛌", kitchen:"🍳", lamp:"💡",
+  mirror:"🪞", sofa:"🛋️", TV:"📺", house:"🏠", cooking:"👩‍🍳", sleeping:"😴",
+  eating:"🍽️", cleaning:"🧹",
+  bike:"🚲", drum:"🥁", game:"🎮", puppet:"🎭", top:"🪀", puzzle:"🧩",
+  cat:"🐱", cow:"🐄", dog:"🐶", horse:"🐴", rabbit:"🐰", sheep:"🐑",
+  turtle:"🐢", duck:"🦆", goat:"🐐",
+  coloring:"🖍️", cutting:"✂️", drawing:"📝", listening:"👂", glue:"🧴",
+  marker:"🖊️", notebook:"📓", counting:"🧮",
+  boots:"👢", sweater:"🧣", bathing:"🩱",
+  skateboard:"🛹", baseball:"⚾", basketball:"🏀",
+  armchair:"🪑", bookcase:"📚", stairs:"🪜", stove:"🔥", tub:"🛁",
+  door:"🚪", phone:"📞", sink:"🚰",
+  tooth:"🦷", breakfast:"🥣", dressed:"👕", school:"🏫", lunch:"🍱", dinner:"🍽️",
+  angry:"😠", bored:"🥱", excited:"🤩", scared:"😨", silly:"🤪",
+  surprised:"😲", thirsty:"🥤", crying:"😢",
+  camel:"🐪", kangaroo:"🦘", panda:"🐼", parrot:"🦜", penguin:"🐧",
+  chef:"👨‍🍳", doctor:"👩‍⚕️", firefighter:"👨‍🚒", farmer:"👨‍🌾",
+  police:"👮", scientist:"👩‍🔬", artist:"🎨",
+  carrots:"🥕", corn:"🌽", hamburger:"🍔", ice:"🍦", mango:"🥭",
+  pasta:"🍝", cheese:"🧀", grapes:"🍇", nuts:"🥜", chips:"🍟",
+  "fly a kite":"🪁", "play soccer":"⚽", "ride a bike":"🚲", "play baseball":"⚾",
+  "play basketball":"🏀", "play a game":"🎲", "watch a game":"📺",
+  "brush my teeth":"🦷", "eat breakfast":"🥣", "eat lunch":"🍱", "eat dinner":"🍽️",
+  "get dressed":"👕", "get up":"⏰", "go to bed":"🛌", "go to school":"🏫",
+  "bathing suit":"🩱", "ice cream":"🍦", "police officer":"👮", "raincoat":"🧥",
+  bakery:"🥖", drugstore:"💊", hospital:"🏥", theater:"🎟️", museum:"🏛️",
+  "police station":"🚓", "post office":"📮", restaurant:"🍽️", supermarket:"🛒",
+  library:"📚", mall:"🏬", stadium:"🏟️", pool:"🏊",
+  airplane:"✈️", bus:"🚌", ferry:"⛴️", helicopter:"🚁", motorcycle:"🏍️",
+  sailboat:"⛵", scooter:"🛵", ship:"🚢", subway:"🚇",
+  goldfish:"🐠", hamster:"🐹", hug:"🤗", snack:"🍎", homework:"📖",
+  cave:"🕳️", desert:"🏜️", forest:"🌲", island:"🏝️", snow:"❄️",
+  sweet:"🍬", salty:"🧂", sour:"🍋", spicy:"🌶️", loud:"🔊", quiet:"🤫",
+  bag:"🛍️", bottle:"🧴", bowl:"🥣", box:"📦", can:"🥫", glass:"🥛", jar:"🍯",
+  bone:"🦴", toes:"🦶", fingers:"👆", stomach:"🤢",
+  junk:"🍔", exercise:"🏃", rest:"😴",
+  celebrate:"🎉", costume:"🎭", dance:"💃", decorations:"🎊", parade:"🎪",
+  party:"🎂", balloons:"🎈", candles:"🕯️", picnic:"🧺", beach:"🏖️",
+  movies:"🎥", fishing:"🎣", skating:"⛸️",
+  fever:"🤒", bandage:"🩹", kit:"🧰", tissue:"🤧",
+  modern:"🏙️", expensive:"💰", candles2:"🕯️", light:"💡",
+  ocean2:"🌊", dolphin:"🐬", octopus:"🐙", shark:"🦈", trash:"🗑️", recycle:"♻️",
+  bicycle:"🚲", scissors:"✂️", battery:"🔋",
+  gravity:"🌍", planet:"🪐", comet:"☄️", galaxy:"🌌", telescope:"🔭", rocket:"🚀",
+  volcano:"🌋", tornado:"🌪️", lightning:"⚡", hurricane:"🌀", flood:"🌊",
+  guitar:"🎸", piano:"🎹", drums:"🥁", violin:"🎻", song:"🎤",
+  jewelry:"💍", weaving:"🧶", photos:"📷",
+  skiing:"⛷️", kayaking:"🛶", motocross:"🏍️", swimming:"🏊", climbing:"🧗",
+  mummy:"🏺", treasure:"💰", pirate:"🏴", storm:"⛈️", chocolate:"🍫",
+  backpack:"🎒", camera:"📷", wind:"🌬️",
+  sky:"🌤️", grandfather:"👴", grandmother:"👵", "living room":"🛋️",
+  hair:"💇", run:"🏃", jump:"🤸", orange:"🍊"
+};
+
+var NUMWORDS=["one","two","three","four","five","six","seven","eight","nine","ten"];
+
+var UNITS = {
+  u0:{
+    num:"0", title:"Hello!", emoji:"👋", zh:"主题：打招呼 — 学会说 Hello 和 Goodbye！",
+    words:[{w:"hello"},{w:"goodbye"},{w:"boy"},{w:"girl"},{w:"teacher"},{w:"friend"}],
+    sents:[
+      {s:"Hello!", pic:"👋", ds:["🙋","👦","👧"]},
+      {s:"I'm a boy.", pic:"👦", ds:["👧","👩‍🏫","👫"]},
+      {s:"Goodbye!", pic:"🙋", ds:["👋","👦","👧"]},
+      {s:"I'm a girl.", pic:"👧", ds:["👦","👩‍🏫","👫"]}
+    ],
+    yesno:null,
+    speak:{words:["hello","boy","girl"], sents:["Hello!","I'm a girl."]},
+    spell:["hi","boy","girl"], missing:["hello","boy"],
+    scramble:"I am a girl", scramblePic:"👧",
+    odd:{list:["hello","goodbye","hi","boy"], odd:"boy"},
+    nums:{e:"👦", n:[1,2]},
+    story:[
+      {text:"This is Anna. Anna is a girl. Anna says hello!", q:"Who is Anna?", pic:"👧", ds:["👦","👵"]},
+      {text:"Tom is a boy. Tom says goodbye. Bye-bye, Tom!", q:"Who is Tom?", pic:"👦", ds:["👧","👩"]}
+    ],
+    grammar:[
+      {s:"I ___ a boy.", opts:["am","is","are"], a:"am"},
+      {s:"I am ___ girl.", opts:["a","an"], a:"a"},
+      {s:"I ___ a girl.", opts:["am","is","are"], a:"am"},
+      {s:"I am ___ boy.", opts:["a","an"], a:"a"}
+    ]
+  },
+  u1:{
+    num:"1", title:"My School", emoji:"🎒", zh:"主题：我的学校 — 文具单词和 It's a ... 句型。",
+    words:[{w:"pen"},{w:"pencil"},{w:"book"},{w:"chair"},{w:"crayon"},{w:"desk"},{w:"paper"},{w:"clock"}],
+    sents:[
+      {s:"It's a pen.", pic:"🖊️", ds:["✏️","📕","📏"]},
+      {s:"It's a pencil.", pic:"✏️", ds:["🖊️","📕","🎒"]},
+      {s:"It's a book.", pic:"📕", ds:["🎒","✏️","🪑"]},
+      {s:"It's a crayon.", pic:"🖍️", ds:["🖊️","📕","🕐"]}
+    ],
+    yesno:[
+      {pic:"✏️", ask:"Is it a pencil?", ans:"yes"},
+      {pic:"📕", ask:"Is it a pencil?", ans:"no"}
+    ],
+    speak:{words:["pen","book","crayon"], sents:["It's a pen.","It's a book."]},
+    spell:["pen","book","desk"], missing:["pen","book"],
+    scramble:"It is a book", scramblePic:"📕",
+    odd:{list:["pen","pencil","crayon","duck"], odd:"duck"},
+    nums:{e:"🪑", n:[1,2]},
+    story:[
+      {text:"Look! This is my classroom. I see a pen and a book, too.", q:"What is it?", pic:"📕", ds:["🖊️","🖍️"]},
+      {text:"The pencil is new. I like the pencil!", q:"What do I like?", pic:"✏️", ds:["📕","🖍️"]}
+    ],
+    grammar:[
+      {s:"It ___ a pen.", opts:["is","am","are"], a:"is"},
+      {s:"It is ___ book.", opts:["a","an"], a:"a"},
+      {s:"___ it a pencil?", opts:["Is","Am","Are"], a:"Is"},
+      {s:"It ___ my bag.", opts:["is","are"], a:"is"}
+    ]
+  },
+  u2:{
+    num:"2", title:"My Toys", emoji:"🧸", zh:"主题：我的玩具 — 玩具和颜色，It's a ball. / It is red. 句型。",
+    words:[{w:"ball"},{w:"balloon"},{w:"car"},{w:"doll"},{w:"kite"},{w:"robot"},
+           {w:"teddy"},{w:"truck"},{w:"red"},{w:"blue"},{w:"yellow"},{w:"green"}],
+    sents:[
+      {s:"It's a ball.", pic:"⚽", ds:["🚗","🧸","🪁"]},
+      {s:"It's a kite.", pic:"🪁", ds:["⚽","🚂","🎎"]},
+      {s:"It is red.", pic:"🔴", ds:["🔵","🟡","🟢"]},
+      {s:"It is blue.", pic:"🔵", ds:["🔴","🟡","🟢"]}
+    ],
+    yesno:[
+      {pic:"⚽", ask:"Is it a ball?", ans:"yes"},
+      {pic:"🔵", ask:"Is it yellow?", ans:"no"}
+    ],
+    speak:{words:["ball","kite","red"], sents:["It's a ball.","It is red."]},
+    spell:["ball","kite","robot"], missing:["ball","kite"],
+    scramble:"It is a red ball", scramblePic:"🔴",
+    odd:{list:["ball","doll","kite","red"], odd:"red"},
+    nums:{e:"⚽", n:[5,6]},
+    story:[
+      {text:"The ball is red. The kite is blue. I like the kite!", q:"What color is the kite?", pic:"🔵", ds:["🔴","🟢"]},
+      {text:"I have a teddy and a train. The teddy is small. The train is big!", q:"Which one is big?", pic:{e:"🚂",big:1}, ds:[{e:"🚂"},{e:"🧸",big:1}]}
+    ],
+    grammar:[
+      {s:"It ___ red.", opts:["is","am","are"], a:"is"},
+      {s:"The ball is ___.", opts:["blue","book"], a:"blue"},
+      {s:"It ___ a kite.", opts:["is","am","are"], a:"is"},
+      {s:"The kite is ___.", opts:["green","goodbye"], a:"green"}
+    ]
+  },
+  u3:{
+    num:"3", title:"My Family", emoji:"👨‍👩‍👧", zh:"主题：我的家人 — This is my ... 句型。",
+    words:[{w:"mom"},{w:"dad"},{w:"brother"},{w:"sister"},{w:"grandma"},{w:"grandpa"}],
+    sents:[
+      {s:"This is my mom.", pic:"👩", ds:["👨","👵","👧"]},
+      {s:"This is my dad.", pic:"👨", ds:["👩","👴","👦"]},
+      {s:"This is my sister.", pic:"👧", ds:["👦","👩","👵"]},
+      {s:"Who's this? It's my grandma.", pic:"👵", ds:["👴","👩","👧"]}
+    ],
+    yesno:[
+      {pic:"👨", ask:"Is it my dad?", ans:"yes"},
+      {pic:"👵", ask:"Is it grandpa?", ans:"no"}
+    ],
+    speak:{words:["mom","dad","sister"], sents:["This is my mom.","This is my dad."]},
+    spell:["mom","dad","sister"], missing:["mom","sister"],
+    scramble:"This is my dad", scramblePic:"👨",
+    odd:{list:["mom","dad","sister","pen"], odd:"pen"},
+    nums:{e:"👧", n:[7,8]},
+    story:[
+      {text:"This is my family. This is my mom. This is my dad, Tom.", q:"Who is Tom?", pic:"👨", ds:["👩","👦"]},
+      {text:"Look! This is my grandma.", q:"Who is this?", pic:"👵", ds:["👴","👩"]}
+    ],
+    grammar:[
+      {s:"___ is my mom.", opts:["This","These"], a:"This"},
+      {s:"This ___ my dad.", opts:["is","are"], a:"is"},
+      {s:"This is ___ sister.", opts:["my","me"], a:"my"},
+      {s:"Who's ___? It's my grandma.", opts:["this","these"], a:"this"}
+    ]
+  },
+  u4:{
+    num:"4", title:"My Body", emoji:"💪", zh:"主题：我的身体 — 身体部位和 Touch your ... 指令。",
+    words:[{w:"nose"},{w:"hand"},{w:"arm"},{w:"leg"},{w:"foot"},{w:"ear"}],
+    sents:[
+      {s:"Touch your nose!", pic:"👃", ds:["👂","✋","🦶"]},
+      {s:"This is my hand.", pic:"✋", ds:["💪","🦵","👃"]},
+      {s:"These are my feet.", pic:"🦶", ds:["✋","👃","🦵"]},
+      {s:"Clap your hands!", pic:"👏", ds:["✋","👂","💪"]}
+    ],
+    yesno:[
+      {pic:"✋", ask:"Is it a hand?", ans:"yes"},
+      {pic:"👃", ask:"Is it an ear?", ans:"no"}
+    ],
+    speak:{words:["nose","hand","foot"], sents:["Touch your nose!","This is my hand."]},
+    spell:["hand","nose","leg"], missing:["hand","foot"],
+    scramble:"This is my hand", scramblePic:"✋",
+    odd:{list:["nose","ear","arm","ball"], odd:"ball"},
+    nums:{e:"👂", n:[9,10]},
+    story:[
+      {text:"I am Ben. I have two hands. I have one nose.", q:"How many hands?", pic:{e:"✋",n:2}, ds:[{e:"✋",n:1},{e:"✋",n:3}]},
+      {text:"My teddy has two arms and one nose.", q:"How many arms?", pic:{e:"💪",n:2}, ds:[{e:"💪",n:1},{e:"💪",n:3}]}
+    ],
+    grammar:[
+      {s:"I ___ two hands.", opts:["have","has"], a:"have"},
+      {s:"___ your nose!", opts:["Touch","Clap"], a:"Touch"},
+      {s:"I have two ___.", opts:["hands","head"], a:"hands"},
+      {s:"Clap ___ hands!", opts:["your","you"], a:"your"}
+    ]
+  },
+  u5:{
+    num:"5", title:"Stories", emoji:"👑", zh:"主题：故事 — 童话人物单词和 This is a ... 句型。",
+    words:[{w:"bird"},{w:"crown"},{w:"friend"},{w:"king"},{w:"prince"},{w:"princess"},{w:"queen"}],
+    sents:[
+      {s:"He is a king.", pic:"🤴", ds:["👸","👦","👑"]},
+      {s:"She is a queen.", pic:"👸", ds:["🤴","👧","🐦"]},
+      {s:"It is a crown.", pic:"👑", ds:["🤴","👸","🐦"]},
+      {s:"I see a bird.", pic:"🐦", ds:["👑","👸","🤴"]}
+    ],
+    yesno:[
+      {pic:"🤴", ask:"Is it a king?", ans:"yes"},
+      {pic:"👸", ask:"Is it a king?", ans:"no"}
+    ],
+    speak:{words:["king","queen","bird"], sents:["He is a king.","She is a queen."]},
+    spell:["king","queen","bird"], missing:["queen","king"],
+    scramble:"I see a king", scramblePic:"🤴",
+    odd:{list:["king","queen","prince","ball"], odd:"ball"},
+    story:[
+      {text:"The king and the queen are in the garden. The princess is with them.", q:"Who is with the king?", pic:"👸", ds:["🐦","👦"]},
+      {text:"Look! The prince has a crown. The bird is small.", q:"Who has a crown?", pic:"👦", ds:["🐦","👸"]}
+    ],
+    grammar:[
+      {s:"This ___ a king.", opts:["is","are"], a:"is"},
+      {s:"The bird ___ small.", opts:["is","are"], a:"is"},
+      {s:"I ___ a princess.", opts:["am","is"], a:"am"},
+      {s:"___ is a queen.", opts:["She","He"], a:"She"}
+    ]
+  },
+  u6:{
+    num:"6", title:"I Like Food", emoji:"🍌", zh:"主题：我喜欢食物 — 食物单词和 I like ... 句型。",
+    words:[{w:"banana"},{w:"bread"},{w:"chicken"},{w:"cookie"},{w:"milk"},{w:"noodles"},{w:"juice"},{w:"rice"},{w:"water"}],
+    sents:[
+      {s:"I like apples.", pic:"🍎", ds:["🍌","🍞","🥛"]},
+      {s:"I like bread.", pic:"🍞", ds:["🍎","🧃","🥚"]},
+      {s:"I like bananas.", pic:"🍌", ds:["🍎","🍞","🥛"]},
+      {s:"Yum! I like milk.", pic:"🥛", ds:["🧃","🍞","🍎"]}
+    ],
+    yesno:[
+      {pic:"🍌", ask:"Is it a banana?", ans:"yes"},
+      {pic:"🧃", ask:"Is it an apple?", ans:"no"}
+    ],
+    speak:{words:["apple","banana","milk"], sents:["I like apples.","Yum! I like milk."]},
+    spell:["egg","milk","apple"], missing:["apple","bread"],
+    scramble:"I like apples", scramblePic:"🍎",
+    odd:{list:["apple","banana","bread","car"], odd:"car"},
+    story:[
+      {text:"I like apples. I like bread, too. I don't like eggs.", q:"What do I like?", pic:"🍎", ds:["🥚","🧃"]},
+      {text:"Milk is good. Juice is good, too. Yum!", q:"What do I drink?", pic:"🥛", ds:["🍞","🍎"]}
+    ],
+    grammar:[
+      {s:"I ___ apples.", opts:["like","likes"], a:"like"},
+      {s:"I don't ___ eggs.", opts:["like","likes"], a:"like"},
+      {s:"I like ___.", opts:["milk","shoes"], a:"milk"},
+      {s:"___ you like bread?", opts:["Do","Is"], a:"Do"}
+    ]
+  },
+  u7:{
+    num:"7", title:"Clothes", emoji:"👕", zh:"主题：衣服 — 服装单词和 I'm wearing ... 句型。",
+    words:[{w:"hat"},{w:"shirt"},{w:"jacket"},{w:"shoes"},{w:"socks"},{w:"dress"}],
+    sents:[
+      {s:"I'm wearing a hat.", pic:"👒", ds:["👕","🧥","👗"]},
+      {s:"Put on your shoes!", pic:"👟", ds:["🧦","👒","👕"]},
+      {s:"This is my jacket.", pic:"🧥", ds:["👗","👟","👒"]},
+      {s:"I'm wearing a dress.", pic:"👗", ds:["👕","🧥","🧦"]}
+    ],
+    yesno:[
+      {pic:"👟", ask:"Are these shoes?", ans:"yes"},
+      {pic:"👒", ask:"Is it a jacket?", ans:"no"}
+    ],
+    speak:{words:["hat","shirt","shoes"], sents:["I'm wearing a hat.","Put on your shoes!"]},
+    spell:["hat","shoes","dress"], missing:["hat","dress"],
+    scramble:"Put on your shoes", scramblePic:"👟",
+    odd:{list:["hat","shirt","socks","banana"], odd:"banana"},
+    story:[
+      {text:"Look at me! I am wearing a hat. My shoes are blue.", q:"What am I wearing?", pic:"👒", ds:["👕","👟"]},
+      {text:"Put on your jacket. Put on your socks, too!", q:"What do I put on?", pic:"🧥", ds:["👒","🧦"]}
+    ],
+    grammar:[
+      {s:"I am ___ a hat.", opts:["wearing","wear"], a:"wearing"},
+      {s:"Put ___ your shoes.", opts:["on","up"], a:"on"},
+      {s:"I'm ___ a dress.", opts:["wearing","wear"], a:"wearing"},
+      {s:"This is ___ jacket.", opts:["my","me"], a:"my"}
+    ]
+  },
+  u8:{
+    num:"8", title:"Animals", emoji:"🦁", zh:"主题：动物 — 动物单词和 big / small 大小描述。",
+    words:[{w:"crocodile"},{w:"giraffe"},{w:"hippo"},{w:"lion"},{w:"monkey"},{w:"zebra"}],
+    sents:[
+      {s:"It's a big lion.", pic:{e:"🦁",big:1}, ds:[{e:"🦁"},"🐒","🦒"]},
+      {s:"It's a small monkey.", pic:"🐒", ds:[{e:"🐒",big:1},"🦓","🐊"]},
+      {s:"It's a tall giraffe.", pic:"🦒", ds:["🦛","🐊","🦁"]},
+      {s:"It's a zebra.", pic:"🦓", ds:["🦛","🐊","🦁"]}
+    ],
+    yesno:[
+      {pic:"🦁", ask:"Is it a lion?", ans:"yes"},
+      {pic:"🦒", ask:"Is it a crocodile?", ans:"no"}
+    ],
+    speak:{words:["lion","monkey","giraffe"], sents:["It's a big lion.","It's a small monkey."]},
+    spell:["lion","zebra","hippo"], missing:["lion","giraffe"],
+    scramble:"It is a big lion", scramblePic:{e:"🦁",big:1},
+    odd:{list:["lion","monkey","zebra","shirt"], odd:"shirt"},
+    story:[
+      {text:"Look at the animals! The lion is big. The monkey is small.", q:"Which one is big?", pic:{e:"🦁",big:1}, ds:[{e:"🦁"},{e:"🐒",big:1}]},
+      {text:"The giraffe is tall. The hippo is big. I like the animals!", q:"Which one is tall?", pic:"🦒", ds:[{e:"🦛",big:1},{e:"🐊"}]}
+    ],
+    grammar:[
+      {s:"It ___ a big lion.", opts:["is","are"], a:"is"},
+      {s:"They ___ zebras.", opts:["is","are"], a:"are"},
+      {s:"It is ___ zebra.", opts:["a","an"], a:"a"},
+      {s:"The monkey ___ small.", opts:["is","am"], a:"is"}
+    ]
+  }
+};
+
+var REVIEWS = {
+  r1:{title:"Review 1", emoji:"🧭", zh:"复习关卡：第 1–4 站学过的内容都在这里，挑战一下吧！", units:["u1","u2","u3","u4"]},
+  r2:{title:"Review 2", emoji:"🏝️", zh:"最终复习：第 5–8 站学过的内容，通过后解锁下一个级别！", units:["u5","u6","u7","u8"]}
+};
+
+/* ---------------- LEVEL 1 (real content from Our World 2E AmE L1) ---------------- */
+var UNITS1 = {
+  a1:{ num:"1", title:"My Classroom", emoji:"🕐", zh:"主题：我的教室 — 文具单词、It's a ... 和 How many 句型。",
+    words:[{w:"pen"},{w:"pencil"},{w:"book"},{w:"chair"},{w:"crayon"},{w:"clock"},{w:"computer"},{w:"map"},{w:"paper"},{w:"picture"}],
+    sents:[
+      {s:"It's a clock.", pic:"🕐", ds:["💻","🗺️","🖼️"]},
+      {s:"It's a computer.", pic:"💻", ds:["🕐","🗺️","📕"]},
+      {s:"It's a map.", pic:"🗺️", ds:["🕐","💻","🖼️"]},
+      {s:"It's a crayon.", pic:"🖍️", ds:["🖊️","📕","🕐"]}
+    ],
+    yesno:[
+      {pic:"🗺️", ask:"Is it a map?", ans:"yes"},
+      {pic:"🖥️", ask:"Is it a computer?", ans:"no"}
+    ],
+    speak:{words:["pen","clock","computer"], sents:["It's a clock.","It's a map."]},
+    spell:["pen","clock","map"], missing:["clock","map"],
+    scramble:"It is a map", scramblePic:"🗺️",
+    odd:{list:["pen","pencil","crayon","bird"], odd:"bird"},
+    nums:{e:"🪑", n:[1,2,3]},
+    story:[
+      {text:"Look! This is my classroom. I see a clock, a map, and a computer.", q:"What do I see?", pic:"💻", ds:["🐦","🍎"]},
+      {text:"The pencil is new. The map is on the wall.", q:"What is new?", pic:"✏️", ds:["🗺️","🕐"]}
+    ],
+    grammar:[
+      {s:"It ___ a clock.", opts:["is","am","are"], a:"is"},
+      {s:"___ it a pen?", opts:["Is","Am","Are"], a:"Is"},
+      {s:"___ many chairs?", opts:["How","What"], a:"How"},
+      {s:"What ___ it?", opts:["is","are","am"], a:"is"}
+    ]
+  },
+  a2:{ num:"2", title:"My World", emoji:"🌳", zh:"主题：我的世界 — 自然单词、is/are 和 Where is ...? 句型。",
+    words:[{w:"bird"},{w:"butterfly"},{w:"flower"},{w:"grass"},{w:"mountain"},{w:"moon"},{w:"ocean"},{w:"river"},{w:"rock"},{w:"sky"},{w:"sun"},{w:"tree"},{w:"cloud"},{w:"star"}],
+    sents:[
+      {s:"It's a tree.", pic:"🌳", ds:["🌸","⛰️","🌿"]},
+      {s:"They're birds.", pic:{e:"🐦",n:2}, ds:[{e:"🐦"},"🦋","🌳"]},
+      {s:"The sun is hot.", pic:"☀️", ds:["🌙","⭐","☁️"]},
+      {s:"Where is the moon? It's in the sky.", pic:"🌙", ds:["☀️","⭐","🌳"]}
+    ],
+    yesno:[
+      {pic:"🌳", ask:"Is it a tree?", ans:"yes"},
+      {pic:"🌙", ask:"Is it the sun?", ans:"no"}
+    ],
+    speak:{words:["tree","bird","sun"], sents:["It's a tree.","The sun is hot."]},
+    spell:["sun","tree","star"], missing:["tree","moon"],
+    scramble:"They are birds", scramblePic:{e:"🐦",n:2},
+    odd:{list:["mountain","river","tree","pen"], odd:"pen"},
+    nums:{e:"🌸", n:[4,5]},
+    story:[
+      {text:"Look at the picture! The sun is in the sky. The birds are in the tree.", q:"Where are the birds?", pic:"🌳", ds:["☀️","🌊"]},
+      {text:"The flower is pink. The rock is gray. I like the river!", q:"What is pink?", pic:"🌸", ds:["🪨","🏞️"]}
+    ],
+    grammar:[
+      {s:"It ___ a river.", opts:["is","are","am"], a:"is"},
+      {s:"They ___ flowers.", opts:["is","are","am"], a:"are"},
+      {s:"The moon is ___ the sky.", opts:["in","on"], a:"in"},
+      {s:"The birds are ___ the tree.", opts:["in","on"], a:"in"}
+    ]
+  },
+  a3:{ num:"3", title:"My Family", emoji:"👨‍👩‍👧", zh:"主题：我的家庭 — 家庭成员、have 句型和 Who's he/she? 问答。",
+    words:[{w:"baby"},{w:"brother"},{w:"father"},{w:"mother"},{w:"grandfather"},{w:"grandmother"},{w:"parents"},{w:"photo"},{w:"sister"},{w:"me"}],
+    sents:[
+      {s:"This is my father.", pic:"👨", ds:["👩","👵","👧"]},
+      {s:"This is my mother.", pic:"👩", ds:["👨","👴","👦"]},
+      {s:"I have a baby brother.", pic:"👶", ds:["👦","👧","📷"]},
+      {s:"Who's this? It's my grandmother.", pic:"👵", ds:["👴","👩","👧"]}
+    ],
+    yesno:[
+      {pic:"👶", ask:"Is it a baby?", ans:"yes"},
+      {pic:"👵", ask:"Is it my grandfather?", ans:"no"}
+    ],
+    speak:{words:["mother","father","sister"], sents:["This is my mother.","This is my father."]},
+    spell:["dad","sister","baby"], missing:["mother","sister"],
+    scramble:"This is my brother", scramblePic:"👦",
+    odd:{list:["mother","father","sister","map"], odd:"map"},
+    nums:{e:"👧", n:[6,7]},
+    story:[
+      {text:"This is my family. My mother is tall. My brother is small.", q:"Who is tall?", pic:"👩", ds:["👦","👴"]},
+      {text:"Look at the photo! This is my grandfather. He is old.", q:"Who is old?", pic:"👴", ds:["👶","👩"]}
+    ],
+    grammar:[
+      {s:"___ is my mother.", opts:["This","These"], a:"This"},
+      {s:"I ___ a big brother.", opts:["have","has"], a:"have"},
+      {s:"Who's ___? He's my father.", opts:["he","she"], a:"he"},
+      {s:"My grandmother ___ old.", opts:["is","are"], a:"is"}
+    ]
+  },
+  a4:{ num:"4", title:"My House", emoji:"🏠", zh:"主题：我的房子 — 房间物品和 Is there ...? 句型。",
+    words:[{w:"bathroom"},{w:"bed"},{w:"bedroom"},{w:"kitchen"},{w:"lamp"},{w:"living room"},{w:"mirror"},{w:"sofa"},{w:"TV"},{w:"house"},{w:"cooking"},{w:"sleeping"},{w:"eating"}],
+    sents:[
+      {s:"The sofa is in the living room.", pic:"🛋️", ds:["🛏️","📺","🍳"]},
+      {s:"She's cooking in the kitchen.", pic:"👩‍🍳", ds:["😴","🧹","🍽️"]},
+      {s:"He's sleeping in the bedroom.", pic:"😴", ds:["👩‍🍳","🛋️","📺"]},
+      {s:"Is there a mirror? Yes!", pic:"🪞", ds:["💡","🛏️","📺"]}
+    ],
+    yesno:[
+      {pic:"🛏️", ask:"Is it a bed?", ans:"yes"},
+      {pic:"💡", ask:"Is it a lamp?", ans:"yes"}
+    ],
+    speak:{words:["bed","sofa","kitchen"], sents:["She's cooking in the kitchen.","He's sleeping."]},
+    spell:["bed","sofa","lamp"], missing:["bed","sofa"],
+    scramble:"She is cooking", scramblePic:"👩‍🍳",
+    odd:{list:["bed","lamp","sofa","bird"], odd:"bird"},
+    nums:{e:"🛏️", n:[3,4]},
+    story:[
+      {text:"This is my house. Mom is cooking in the kitchen. Dad is watching TV in the living room.", q:"Where is Mom?", pic:"🍳", ds:["🛋️","🛏️"]},
+      {text:"The baby is sleeping in the bedroom. Shh!", q:"Where is the baby?", pic:"🛌", ds:["🍳","🛋️"]}
+    ],
+    grammar:[
+      {s:"___ there a lamp?", opts:["Is","Are","Am"], a:"Is"},
+      {s:"Yes, there ___.", opts:["is","are"], a:"is"},
+      {s:"She's ___ in the kitchen.", opts:["cooking","sleeping"], a:"cooking"},
+      {s:"He's watching ___.", opts:["TV","bed"], a:"TV"}
+    ]
+  },
+  a5:{ num:"5", title:"Cool Clothes", emoji:"👕", zh:"主题：酷衣服 — 服装单词和 I'm wearing ... 句型。",
+    words:[{w:"dress"},{w:"hat"},{w:"jacket"},{w:"pants"},{w:"shirt"},{w:"shoes"},{w:"skirt"},{w:"socks"}],
+    sents:[
+      {s:"I'm wearing a hat.", pic:"👒", ds:["👕","🧥","👗"]},
+      {s:"She's wearing a dress.", pic:"👗", ds:["👖","🧦","👒"]},
+      {s:"Put on your shoes!", pic:"👟", ds:["🧦","👒","👕"]},
+      {s:"Those are my pants.", pic:"👖", ds:["👟","👗","🧥"]}
+    ],
+    yesno:[
+      {pic:"🧥", ask:"Is it a jacket?", ans:"yes"},
+      {pic:"👒", ask:"Is it a jacket?", ans:"no"}
+    ],
+    speak:{words:["hat","shirt","shoes"], sents:["I'm wearing a hat.","Put on your shoes!"]},
+    spell:["hat","shoes","dress"], missing:["hat","dress"],
+    scramble:"Put on your shoes", scramblePic:"👟",
+    odd:{list:["hat","shirt","socks","river"], odd:"river"},
+    nums:{e:"🧦", n:[6,7]},
+    story:[
+      {text:"Anna is wearing a pink dress. Ben is wearing a purple jacket.", q:"What is Anna wearing?", pic:"👗", ds:["🧥","👖"]},
+      {text:"Put on your socks! Put on your shoes, too!", q:"What do I put on?", pic:"🧦", ds:["👒","👗"]}
+    ],
+    grammar:[
+      {s:"What ___ you wearing?", opts:["are","is","am"], a:"are"},
+      {s:"I'm ___ a hat.", opts:["wearing","wear"], a:"wearing"},
+      {s:"What ___ she wearing?", opts:["is","are","am"], a:"is"},
+      {s:"Those are my ___.", opts:["socks","sock"], a:"socks"}
+    ]
+  },
+  a6:{ num:"6", title:"My Toys", emoji:"🚂", zh:"主题：我的玩具 — 玩具单词和 Do you want ...? 句型。",
+    words:[{w:"ball"},{w:"bike"},{w:"car"},{w:"drum"},{w:"kite"},{w:"puppet"},{w:"train"},{w:"truck"},{w:"doll"},{w:"robot"},{w:"puzzle"}],
+    sents:[
+      {s:"She wants a train.", pic:"🚂", ds:["🚲","🥁","🪁"]},
+      {s:"I want a kite.", pic:"🪁", ds:["🚂","🚲","🧩"]},
+      {s:"Is this your robot?", pic:"🤖", ds:["🎎","🥁","🚗"]},
+      {s:"He wants a drum.", pic:"🥁", ds:["🪁","🚂","🧸"]}
+    ],
+    yesno:[
+      {pic:"🚂", ask:"Is it a train?", ans:"yes"},
+      {pic:"🚲", ask:"Is it a car?", ans:"no"}
+    ],
+    speak:{words:["train","kite","drum"], sents:["I want a kite.","She wants a train."]},
+    spell:["kite","drum","train"], missing:["kite","drum"],
+    scramble:"I want a bike", scramblePic:"🚲",
+    odd:{list:["drum","kite","doll","apple"], odd:"apple"},
+    nums:{e:"⚽", n:[8,9]},
+    story:[
+      {text:"Ben wants a drum. Ana wants a puppet. They want to play!", q:"What does Ben want?", pic:"🥁", ds:["🪁","🚲"]},
+      {text:"Look at the robot! The robot is on the table.", q:"What is on the table?", pic:"🤖", ds:["🎎","🧩"]}
+    ],
+    grammar:[
+      {s:"___ you want a ball?", opts:["Do","Does","Is"], a:"Do"},
+      {s:"___ he want a train?", opts:["Does","Do","Is"], a:"Does"},
+      {s:"Yes, I ___.", opts:["do","does","don't"], a:"do"},
+      {s:"She wants a ___.", opts:["kite","kites"], a:"kite"}
+    ]
+  },
+  a7:{ num:"7", title:"My Body", emoji:"💪", zh:"主题：我的身体 — 身体部位和 my/your/his/her。",
+    words:[{w:"arm"},{w:"ear"},{w:"eye"},{w:"foot"},{w:"hair"},{w:"hand"},{w:"head"},{w:"leg"},{w:"mouth"},{w:"nose"},{w:"run"},{w:"jump"}],
+    sents:[
+      {s:"This is my hand.", pic:"✋", ds:["💪","🦵","👃"]},
+      {s:"I have two eyes.", pic:{e:"👁️",n:2}, ds:[{e:"👁️"},{e:"👂",n:2},"👃"]},
+      {s:"Touch your nose!", pic:"👃", ds:["👂","✋","🦶"]},
+      {s:"My hair is black.", pic:"💇", ds:["👁️","👄","✋"]}
+    ],
+    yesno:[
+      {pic:"👃", ask:"Is it a nose?", ans:"yes"},
+      {pic:"👂", ask:"Is it an eye?", ans:"no"}
+    ],
+    speak:{words:["nose","hand","hair"], sents:["This is my hand.","Touch your nose!"]},
+    spell:["hand","nose","leg"], missing:["hand","foot"],
+    scramble:"I have two eyes", scramblePic:{e:"👁️",n:2},
+    odd:{list:["arm","leg","nose","bike"], odd:"bike"},
+    nums:{e:"🖐️", n:[7,8]},
+    story:[
+      {text:"Ben can jump. He has strong legs. He can run fast!", q:"What can Ben do?", pic:"🏃", ds:["💪","👂"]},
+      {text:"Look at my face! I have two eyes and one nose.", q:"How many eyes?", pic:{e:"👁️",n:2}, ds:[{e:"👁️"},{e:"👁️",n:3}]}
+    ],
+    grammar:[
+      {s:"I have two ___.", opts:["eyes","eye"], a:"eyes"},
+      {s:"My ___ is black.", opts:["hair","hat"], a:"hair"},
+      {s:"I can ___ fast.", opts:["run","runs"], a:"run"},
+      {s:"Touch ___ nose!", opts:["your","you"], a:"your"}
+    ]
+  },
+  a8:{ num:"8", title:"Good Food", emoji:"🍕", zh:"主题：好吃 food — 食物单词和 Do you like ...? 句型。",
+    words:[{w:"apple"},{w:"banana"},{w:"cheese"},{w:"chicken"},{w:"cookie"},{w:"egg"},{w:"fish"},{w:"orange"},{w:"pizza"},{w:"rice"},{w:"salad"},{w:"sandwich"},{w:"soup"},{w:"milk"}],
+    sents:[
+      {s:"I like pizza.", pic:"🍕", ds:["🧀","🍲","🥗"]},
+      {s:"I don't like soup.", pic:"🍲", ds:["🍕","🥪","🍚"]},
+      {s:"She likes cookies.", pic:"🍪", ds:["🍎","🧀","🍗"]},
+      {s:"Do you like eggs?", pic:"🥚", ds:["🍊","🥗","🥛"]}
+    ],
+    yesno:[
+      {pic:"🍕", ask:"Is it pizza?", ans:"yes"},
+      {pic:"🧀", ask:"Is it an apple?", ans:"no"}
+    ],
+    speak:{words:["pizza","apple","milk"], sents:["I like pizza.","I don't like soup."]},
+    spell:["egg","milk","pizza"], missing:["pizza","cheese"],
+    scramble:"I like pizza", scramblePic:"🍕",
+    odd:{list:["apple","banana","salad","drum"], odd:"drum"},
+    nums:{e:"🍪", n:[9,10]},
+    story:[
+      {text:"I like rice and chicken. I don't like cheese. Yum!", q:"What do I like?", pic:"🍚", ds:["🧀","🥗"]},
+      {text:"Milk is good. Juice is good, too. Yum!", q:"What do I drink?", pic:"🥛", ds:["🍞","🍎"]}
+    ],
+    grammar:[
+      {s:"___ you like fish?", opts:["Do","Does","Is"], a:"Do"},
+      {s:"I ___ soup.", opts:["like","likes"], a:"like"},
+      {s:"Does he ___ rice?", opts:["like","likes"], a:"like"},
+      {s:"I don't like ___.", opts:["eggs","egg"], a:"eggs"}
+    ]
+  },
+  a9:{ num:"9", title:"Animal Friends", emoji:"🐄", zh:"主题：动物朋友 — 动物单词和 They're ...-ing 句型。",
+    words:[{w:"cat"},{w:"cow"},{w:"dog"},{w:"horse"},{w:"rabbit"},{w:"sheep"},{w:"turtle"},{w:"duck"},{w:"goat"}],
+    sents:[
+      {s:"The cows are eating.", pic:{e:"🐄",n:2}, ds:["🐱","🐴","🐑"]},
+      {s:"The cats are sleeping.", pic:"🐱", ds:[{e:"🐄",n:2},"🐶","🐰"]},
+      {s:"They're running.", pic:"🏃", ds:["😴","🍽️","🐱"]},
+      {s:"Is it a horse?", pic:"🐴", ds:["🐄","🐑","🐢"]}
+    ],
+    yesno:[
+      {pic:"🐄", ask:"Is it a cow?", ans:"yes"},
+      {pic:"🐑", ask:"Is it a horse?", ans:"no"}
+    ],
+    speak:{words:["cat","cow","horse"], sents:["The cows are eating.","They're running."]},
+    spell:["cat","cow","horse"], missing:["cat","horse"],
+    scramble:"The cats are sleeping", scramblePic:"🐱",
+    odd:{list:["cow","dog","horse","pizza"], odd:"pizza"},
+    nums:{e:"🐰", n:[3,4]},
+    story:[
+      {text:"Look at the farm! The cows are eating. The horses are running. The cats are sleeping.", q:"What are the horses doing?", pic:"🏃", ds:["😴","🍽️"]},
+      {text:"The duck is in the water. The turtle is small.", q:"What is in the water?", pic:"🦆", ds:["🐢","🐄"]}
+    ],
+    grammar:[
+      {s:"___ the goats jumping?", opts:["Are","Is","Do"], a:"Are"},
+      {s:"What are the cats ___?", opts:["doing","do"], a:"doing"},
+      {s:"They ___ sleeping.", opts:["are","is"], a:"are"},
+      {s:"What are the ___ doing?", opts:["sheep","sheeps"], a:"sheep"}
+    ]
+  }
+};
+var REVIEWS1 = {
+  aR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["a1","a2","a3"]},
+  aR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["a4","a5","a6"]},
+  aR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后解锁下一个级别！", units:["a7","a8","a9"]}
+};
+/* ---------------- LEVEL 2 (real content from Our World 2E AmE L2) ---------------- */
+var UNITS2 = {
+  b1:{ num:"1", title:"Fun in Class", emoji:"🖍️", zh:"主题：课堂真好玩 — 正在做什么（I'm coloring.）句型。",
+    words:[{w:"coloring"},{w:"counting"},{w:"cutting"},{w:"drawing"},{w:"listening"},{w:"glue"},{w:"marker"},{w:"notebook"}],
+    sents:[
+      {s:"What are you doing? I'm coloring.", pic:"🖍️", ds:["✂️","📝","📓"]},
+      {s:"She's cutting.", pic:"✂️", ds:["🖍️","👂","🧴"]},
+      {s:"He's drawing.", pic:"📝", ds:["🖍️","✂️","🧮"]},
+      {s:"I'm listening to the teacher.", pic:"👂", ds:["📝","📓","✂️"]}
+    ],
+    yesno:[
+      {pic:"✂️", ask:"Is she cutting?", ans:"yes"},
+      {pic:"📓", ask:"Is it a notebook?", ans:"yes"}
+    ],
+    speak:{words:["coloring","cutting","notebook"], sents:["I'm coloring.","She's cutting."]},
+    spell:["glue","marker","notebook"], missing:["notebook","marker"],
+    scramble:"I am coloring", scramblePic:"🖍️",
+    odd:{list:["glue","marker","notebook","cat"], odd:"cat"},
+    story:[
+      {text:"Look at Ana! She's coloring. Ben is cutting. The teacher is talking.", q:"What is Ana doing?", pic:"🖍️", ds:["✂️","👂"]},
+      {text:"My notebook is new. My marker is red.", q:"What is red?", pic:"🖊️", ds:["📓","✂️"]}
+    ],
+    grammar:[
+      {s:"What are you ___?", opts:["doing","do"], a:"doing"},
+      {s:"I'm ___ a picture.", opts:["drawing","draw"], a:"drawing"},
+      {s:"What ___ he doing?", opts:["is","are"], a:"is"},
+      {s:"He's ___ to the teacher.", opts:["listening","listen"], a:"listening"}
+    ]
+  },
+  b2:{ num:"2", title:"Boots and Bathing Suits", emoji:"👢", zh:"主题：衣服和天气 — What's the weather like? 句型。",
+    words:[{w:"bathing suit"},{w:"boots"},{w:"cloudy"},{w:"cold"},{w:"hot"},{w:"raincoat"},{w:"rainy"},{w:"snowy"},{w:"sunny"},{w:"windy"},{w:"sweater"}],
+    sents:[
+      {s:"It's sunny today.", pic:"☀️", ds:["🌧️","❄️","🌬️"]},
+      {s:"It's rainy. Put on your boots!", pic:"👢", ds:["🩱","🧣","☀️"]},
+      {s:"It's cold. I'm wearing my sweater.", pic:"🧣", ds:["👢","🩱","🥶"]},
+      {s:"It's snowy!", pic:"❄️", ds:["☀️","🌬️","☁️"]}
+    ],
+    yesno:[
+      {pic:"☀️", ask:"Is it sunny?", ans:"yes"},
+      {pic:"🌧️", ask:"Is it snowy?", ans:"no"}
+    ],
+    speak:{words:["sunny","rainy","boots"], sents:["It's sunny today.","It's rainy."]},
+    spell:["boots","sunny","windy"], missing:["boots","sweater"],
+    scramble:"It is rainy", scramblePic:"🌧️",
+    odd:{list:["boots","sweater","raincoat","panda"], odd:"panda"},
+    story:[
+      {text:"It's snowy! Ben is wearing his boots and his sweater.", q:"What is Ben wearing?", pic:"👢", ds:["🩱","☀️"]},
+      {text:"It's windy today. Look at the clouds!", q:"How is the weather?", pic:"🌬️", ds:["🔥","🥵"]}
+    ],
+    grammar:[
+      {s:"What's the weather ___?", opts:["like","rain"], a:"like"},
+      {s:"It's ___ today.", opts:["sunny","sun"], a:"sunny"},
+      {s:"I'm wearing my ___.", opts:["sweater","sweaters"], a:"sweater"},
+      {s:"It ___ cold today.", opts:["is","are"], a:"is"}
+    ]
+  },
+  b3:{ num:"3", title:"Fun in the Sun", emoji:"⚽", zh:"主题：户外游戏 — like to do 句型（I like to play soccer.）。",
+    words:[{w:"fly a kite"},{w:"play soccer"},{w:"ride a bike"},{w:"skateboard"},{w:"play baseball"},{w:"play basketball"},{w:"play a game"},{w:"watch a game"}],
+    sents:[
+      {s:"I like to fly a kite.", pic:"🪁", ds:["⚽","🛹","⚾"]},
+      {s:"He likes to play soccer.", pic:"⚽", ds:["🪁","🚲","🏀"]},
+      {s:"She likes to ride a bike.", pic:"🚲", ds:["🛹","⚾","🎲"]},
+      {s:"They like to play basketball.", pic:"🏀", ds:["⚾","🪁","⚽"]}
+    ],
+    yesno:[
+      {pic:"⚽", ask:"Do you like to play soccer?", ans:"yes"},
+      {pic:"🛹", ask:"Is it a skateboard?", ans:"yes"}
+    ],
+    speak:{words:["kite","game","bike"], sents:["I like to fly a kite.","I like to play soccer."]},
+    spell:["kite","game","bike"], missing:["kite","game"],
+    scramble:"I like to play", scramblePic:"⚽",
+    odd:{list:["soccer","baseball","basketball","boots"], odd:"boots"},
+    story:[
+      {text:"Ben likes to play baseball. Ana likes to ride her bike. They like to play!", q:"What does Ben like to play?", pic:"⚾", ds:["🚲","🪁"]},
+      {text:"It's sunny. Let's fly a kite! Let's play a game, too!", q:"What do they fly?", pic:"🪁", ds:["⚽","🛹"]}
+    ],
+    grammar:[
+      {s:"What do you like to ___?", opts:["do","doing"], a:"do"},
+      {s:"I like to ___ a kite.", opts:["fly","flying"], a:"fly"},
+      {s:"They like to ___ soccer.", opts:["play","plays"], a:"play"},
+      {s:"___ she like to swim?", opts:["Does","Do"], a:"Does"}
+    ]
+  },
+  b4:{ num:"4", title:"Inside Our House", emoji:"🏠", zh:"主题：家里 — 家具单词和 Where is ...? 句型。",
+    words:[{w:"armchair"},{w:"bookcase"},{w:"stairs"},{w:"stove"},{w:"tub"},{w:"door"},{w:"phone"},{w:"sink"}],
+    sents:[
+      {s:"The phone is on the table.", pic:"📞", ds:["🚪","🪜","📚"]},
+      {s:"The tub is in the bathroom.", pic:"🛁", ds:["🔥","🚰","📚"]},
+      {s:"Where is the sink? It's in the kitchen.", pic:"🚰", ds:["📞","🛁","🪜"]},
+      {s:"The bookcase is big.", pic:"📚", ds:["🪑","🚪","🔥"]}
+    ],
+    yesno:[
+      {pic:"🚪", ask:"Is it a door?", ans:"yes"},
+      {pic:"🪜", ask:"Is it stairs?", ans:"yes"}
+    ],
+    speak:{words:["door","phone","stairs"], sents:["Where is the phone?","The tub is in the bathroom."]},
+    spell:["door","phone","stairs"], missing:["door","phone"],
+    scramble:"Where is the cat", scramblePic:"🐱",
+    odd:{list:["stove","tub","sink","soccer"], odd:"soccer"},
+    story:[
+      {text:"This is our house. The phone is on the table. The bookcase is in the living room.", q:"Where is the phone?", pic:"📞", ds:["📚","🛁"]},
+      {text:"Look! The cat is on the stairs. The dog is by the door.", q:"Where is the cat?", pic:"🪜", ds:["🚪","🚰"]}
+    ],
+    grammar:[
+      {s:"Where is the ___?", opts:["phone","phones"], a:"phone"},
+      {s:"The phone is ___ the table.", opts:["on","up"], a:"on"},
+      {s:"___ is the cat?", opts:["Where","What"], a:"Where"},
+      {s:"The tub is in the ___.", opts:["bathroom","book"], a:"bathroom"}
+    ]
+  },
+  b5:{ num:"5", title:"Day by Day", emoji:"⏰", zh:"主题：每一天 — 起床刷牙上学等日常作息表达。",
+    words:[{w:"brush my teeth"},{w:"eat breakfast"},{w:"eat lunch"},{w:"eat dinner"},{w:"get dressed"},{w:"get up"},{w:"go to bed"},{w:"go to school"}],
+    sents:[
+      {s:"I get up at seven.", pic:"⏰", ds:["🦷","🥣","🏫"]},
+      {s:"I brush my teeth.", pic:"🦷", ds:["⏰","👕","🛌"]},
+      {s:"I eat breakfast at home.", pic:"🥣", ds:["🍱","🦷","🏫"]},
+      {s:"I go to bed at nine.", pic:"🛌", ds:["🏫","⏰","🍽️"]}
+    ],
+    yesno:[
+      {pic:"🦷", ask:"Do you brush your teeth?", ans:"yes"},
+      {pic:"🏫", ask:"Is it a school?", ans:"yes"}
+    ],
+    speak:{words:["breakfast","school","bed"], sents:["I eat breakfast.","I go to bed at nine."]},
+    spell:["bed","lunch","dinner"], missing:["breakfast","dinner"],
+    scramble:"I go to bed", scramblePic:"🛌",
+    odd:{list:["breakfast","lunch","dinner","kangaroo"], odd:"kangaroo"},
+    story:[
+      {text:"Every day I get up at seven. I eat breakfast. Then I go to school.", q:"What do I do first?", pic:"⏰", ds:["🏫","🥣"]},
+      {text:"At night I eat dinner with my family. Then I go to bed.", q:"When do I go to bed?", pic:"🛌", ds:["☀️","🍽️"]}
+    ],
+    grammar:[
+      {s:"I ___ up at seven.", opts:["get","gets"], a:"get"},
+      {s:"I ___ my teeth.", opts:["brush","brushes"], a:"brush"},
+      {s:"She ___ to school at eight.", opts:["goes","go"], a:"goes"},
+      {s:"I ___ to bed at nine.", opts:["go","come"], a:"go"}
+    ]
+  },
+  b6:{ num:"6", title:"How Are You?", emoji:"🤩", zh:"主题：情绪表达 — How are you? I'm hungry. 句型。",
+    words:[{w:"angry"},{w:"bored"},{w:"excited"},{w:"scared"},{w:"silly"},{w:"surprised"},{w:"thirsty"},{w:"crying"}],
+    sents:[
+      {s:"How are you? I'm excited!", pic:"🤩", ds:["😠","😨","🥱"]},
+      {s:"He's angry.", pic:"😠", ds:["🤩","😲","😢"]},
+      {s:"She's thirsty.", pic:"🥤", ds:["😠","🥱","🤪"]},
+      {s:"The baby is crying.", pic:"😢", ds:["😲","🤩","😨"]}
+    ],
+    yesno:[
+      {pic:"😠", ask:"Is he angry?", ans:"yes"},
+      {pic:"🥤", ask:"Is she thirsty?", ans:"yes"}
+    ],
+    speak:{words:["excited","angry","thirsty"], sents:["I'm excited!","He's angry."]},
+    spell:["silly","angry","thirsty"], missing:["angry","thirsty"],
+    scramble:"I am excited", scramblePic:"🤩",
+    odd:{list:["angry","bored","scared","stairs"], odd:"stairs"},
+    story:[
+      {text:"How are you? I'm excited! It's my birthday.", q:"How am I?", pic:"🤩", ds:["😠","😨"]},
+      {text:"Ben is thirsty. He wants water. Ana is hungry. She wants a sandwich.", q:"What does Ben want?", pic:"🥤", ds:["🍔","🥣"]}
+    ],
+    grammar:[
+      {s:"How ___ you?", opts:["are","is"], a:"are"},
+      {s:"I'm ___.", opts:["excited","excite"], a:"excited"},
+      {s:"He's ___. He wants water.", opts:["thirsty","hungry"], a:"thirsty"},
+      {s:"I'm ___. I want a sandwich.", opts:["hungry","thirsty"], a:"hungry"}
+    ]
+  },
+  b7:{ num:"7", title:"Awesome Animals", emoji:"🐧", zh:"主题：神奇的动物 — 动物单词和 can / can't 句型。",
+    words:[{w:"camel"},{w:"crocodile"},{w:"elephant"},{w:"giraffe"},{w:"hippo"},{w:"kangaroo"},{w:"lion"},{w:"monkey"},{w:"panda"},{w:"parrot"},{w:"penguin"},{w:"tiger"},{w:"zebra"}],
+    sents:[
+      {s:"A hippo can swim.", pic:"🦛", ds:["🐧","🦜","🐪"]},
+      {s:"A penguin can't fly.", pic:"🐧", ds:["🦅","🦜","🦘"]},
+      {s:"A parrot can talk.", pic:"🦜", ds:["🐧","🐪","🦘"]},
+      {s:"A kangaroo can hop.", pic:"🦘", ds:["🦛","🐧","🦁"]}
+    ],
+    yesno:[
+      {pic:"🦛", ask:"Can a hippo swim?", ans:"yes"},
+      {pic:"🐧", ask:"Can a penguin fly?", ans:"no"}
+    ],
+    speak:{words:["panda","parrot","kangaroo"], sents:["A parrot can talk.","A penguin can't fly."]},
+    spell:["panda","parrot","lion"], missing:["panda","parrot"],
+    scramble:"A parrot can talk", scramblePic:"🦜",
+    odd:{list:["lion","tiger","zebra","tub"], odd:"tub"},
+    story:[
+      {text:"Look at the animals! A hippo can swim, but it can't climb. A monkey can climb!", q:"What can't a hippo do?", pic:"🧗", ds:["🏊","🦛"]},
+      {text:"The parrot can talk. The panda is black and white. I like the zoo!", q:"What can the parrot do?", pic:"🦜", ds:["🐼","🦘"]}
+    ],
+    grammar:[
+      {s:"A hippo ___ swim.", opts:["can","can't"], a:"can"},
+      {s:"A penguin ___ fly.", opts:["can't","can"], a:"can't"},
+      {s:"___ a parrot talk?", opts:["Can","Is"], a:"Can"},
+      {s:"Yes, it ___.", opts:["can","can't"], a:"can"}
+    ]
+  },
+  b8:{ num:"8", title:"The World of Work", emoji:"👩‍🔬", zh:"主题：职业 — What does he do? He's a chef. 句型。",
+    words:[{w:"chef"},{w:"dentist"},{w:"doctor"},{w:"farmer"},{w:"firefighter"},{w:"nurse"},{w:"police officer"},{w:"scientist"},{w:"artist"}],
+    sents:[
+      {s:"What does he do? He's a chef.", pic:"👨‍🍳", ds:["👩‍⚕️","👮","👨‍🌾"]},
+      {s:"She's a scientist.", pic:"👩‍🔬", ds:["👨‍🍳","🎨","🦷"]},
+      {s:"The firefighter helps people.", pic:"👨‍🚒", ds:["👮","👨‍🌾","👩‍🔬"]},
+      {s:"The police officer helps us.", pic:"👮", ds:["👨‍🍳","👩‍🔬","👨‍🌾"]}
+    ],
+    yesno:[
+      {pic:"👨‍🍳", ask:"Is he a chef?", ans:"yes"},
+      {pic:"👩‍⚕️", ask:"Is she a doctor?", ans:"yes"}
+    ],
+    speak:{words:["chef","doctor","scientist"], sents:["He's a chef.","She's a scientist."]},
+    spell:["chef","artist","doctor"], missing:["chef","doctor"],
+    scramble:"She is a doctor", scramblePic:"👩‍⚕️",
+    odd:{list:["chef","farmer","scientist","penguin"], odd:"penguin"},
+    story:[
+      {text:"My mother is a doctor. She helps sick people. My father is a farmer.", q:"What is my mother?", pic:"👩‍⚕️", ds:["👨‍🌾","👨‍🍳"]},
+      {text:"The firefighter is brave. The police officer helps us, too!", q:"Who helps us?", pic:"👮", ds:["🎨","🦷"]}
+    ],
+    grammar:[
+      {s:"What ___ he do?", opts:["does","do"], a:"does"},
+      {s:"He's a ___.", opts:["chef","chefs"], a:"chef"},
+      {s:"___ she do? She's a scientist.", opts:["What","Where"], a:"What"},
+      {s:"A ___ helps sick people.", opts:["doctor","bus"], a:"doctor"}
+    ]
+  },
+  b9:{ num:"9", title:"Let's Eat!", emoji:"🍔", zh:"主题：开饭啦 — 食物单词和 Is there any ...? 句型。",
+    words:[{w:"carrots"},{w:"corn"},{w:"hamburger"},{w:"ice cream"},{w:"mango"},{w:"noodles"},{w:"pasta"},{w:"cheese"},{w:"grapes"},{w:"nuts"},{w:"bread"}],
+    sents:[
+      {s:"Is there any ice cream? Yes!", pic:"🍦", ds:["🥕","🌽","🥭"]},
+      {s:"Are there any mangoes? Yes!", pic:{e:"🥭",n:2}, ds:["🧀","🍜","🍇"]},
+      {s:"I like pasta.", pic:"🍝", ds:["🍔","🥕","🥜"]},
+      {s:"The cheese is good.", pic:"🧀", ds:["🍝","🌽","🍦"]}
+    ],
+    yesno:[
+      {pic:"🍔", ask:"Is it a hamburger?", ans:"yes"},
+      {pic:"🥕", ask:"Is it corn?", ans:"no"}
+    ],
+    speak:{words:["hamburger","ice cream","noodles"], sents:["I like pasta.","The cheese is good."]},
+    spell:["cheese","bread","corn"], missing:["cheese","corn"],
+    scramble:"I like noodles", scramblePic:"🍜",
+    odd:{list:["hamburger","cheese","grapes","chef"], odd:"chef"},
+    story:[
+      {text:"Look at the table! There are mangoes and grapes. There is cheese, too.", q:"What fruit do you see?", pic:"🥭", ds:["🧀","🥕"]},
+      {text:"I like noodles. I don't like nuts. Yum!", q:"What do I like?", pic:"🍜", ds:["🥜","🌽"]}
+    ],
+    grammar:[
+      {s:"Is there ___ ice cream?", opts:["any","a"], a:"any"},
+      {s:"Are there ___ mangoes?", opts:["any","a"], a:"any"},
+      {s:"Yes, there ___.", opts:["are","is"], a:"are"},
+      {s:"There ___ some cheese.", opts:["is","are"], a:"is"}
+    ]
+  }
+};
+var REVIEWS2 = {
+  bR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["b1","b2","b3"]},
+  bR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["b4","b5","b6"]},
+  bR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后解锁下一个级别！", units:["b7","b8","b9"]}
+};
+/* ---------------- LEVEL 3 ---------------- */
+var UNITS3 = {
+  c1:{ num:"1", title:"A Helping Hand", emoji:"🐹", zh:"主题：帮忙做家务 — 帮忙做家务的英文表达。",
+    words:[{w:"goldfish"},{w:"hamster"},{w:"hug"},{w:"snack"},{w:"homework"},{w:"bath"}],
+    sents:[
+      {s:"I make my bed every day.", pic:"🛏️", ds:["🐠","🐹","📖"]},
+      {s:"I feed the goldfish.", pic:"🐠", ds:["🛏️","🐹","🍎"]},
+      {s:"I do my homework after school.", pic:"📖", ds:["🍎","🛏️","🐹"]},
+      {s:"I have a snack at four.", pic:"🍎", ds:["📖","🐠","🛁"]}
+    ],
+    yesno:[
+      {pic:"🐠", ask:"Do you feed the goldfish?", ans:"yes"},
+      {pic:"🛁", ask:"Is it a bath?", ans:"yes"}
+    ],
+    speak:{words:["goldfish","hamster","snack"], sents:["I make my bed.","I feed the goldfish."]},
+    spell:["goldfish","snack","bath"], missing:["goldfish","snack"],
+    scramble:"I make my bed", scramblePic:"🛏️",
+    odd:{list:["goldfish","hamster","snack","bus"], odd:"bus"},
+    story:[
+      {text:"I help at home. I make my bed and do my homework. Then I have a snack.", q:"What do I do first?", pic:"🛏️", ds:["🍎","📖"]},
+      {text:"My hamster is small. I give it a bath on Sunday!", q:"When does the hamster have a bath?", pic:"🛁", ds:["🐠","📖"]}
+    ],
+    grammar:[
+      {s:"I ___ my bed.", opts:["make","makes"], a:"make"},
+      {s:"I ___ the goldfish.", opts:["feed","feeds"], a:"feed"},
+      {s:"I ___ a snack after school.", opts:["have","has"], a:"have"},
+      {s:"My brother ___ his homework.", opts:["does","do"], a:"does"}
+    ]
+  },
+  c2:{ num:"2", title:"My Place in the World", emoji:"🏙️", zh:"主题：我的城镇 — 场所单词和 There is ... 句型。",
+    words:[{w:"bakery"},{w:"drugstore"},{w:"hospital"},{w:"museum"},{w:"theater"},{w:"post office"},{w:"restaurant"},{w:"supermarket"},{w:"library"},{w:"park"}],
+    sents:[
+      {s:"There is a park in my town.", pic:"🌳", ds:["🏥","🛒","🏛️"]},
+      {s:"The bakery is next to the library.", pic:"🥖", ds:["📚","💊","📮"]},
+      {s:"Is there a museum? Yes!", pic:"🏛️", ds:["🥖","🏥","🛒"]},
+      {s:"We buy bread at the bakery.", pic:"🥖", ds:["💊","🏛️","📚"]}
+    ],
+    yesno:[
+      {pic:"🏥", ask:"Is it a hospital?", ans:"yes"},
+      {pic:"🛒", ask:"Is it a supermarket?", ans:"yes"}
+    ],
+    speak:{words:["bakery","hospital","supermarket"], sents:["There is a park in my town.","Is there a museum? Yes!"]},
+    spell:["park","bakery","museum"], missing:["bakery","museum"],
+    scramble:"There is a park", scramblePic:"🌳",
+    odd:{list:["bakery","hospital","museum","goldfish"], odd:"goldfish"},
+    story:[
+      {text:"My town is small. There is a library, a park, and a museum. I love the park!", q:"What does the town have?", pic:"🌳", ds:["💊","🎬"]},
+      {text:"Mom buys bread at the bakery. Dad buys fruit at the supermarket.", q:"Where does Mom buy bread?", pic:"🥖", ds:["🛒","🏛️"]}
+    ],
+    grammar:[
+      {s:"There ___ a park.", opts:["is","are"], a:"is"},
+      {s:"___ there a museum?", opts:["Is","Are"], a:"Is"},
+      {s:"Yes, there ___.", opts:["is","are"], a:"is"},
+      {s:"Is there a ___?", opts:["park","parks"], a:"park"}
+    ]
+  },
+  c3:{ num:"3", title:"On the Move!", emoji:"🚌", zh:"主题：交通工具 — 交通工具单词和 don't / doesn't 句型。",
+    words:[{w:"airplane"},{w:"bus"},{w:"ferry"},{w:"helicopter"},{w:"motorcycle"},{w:"sailboat"},{w:"scooter"},{w:"ship"},{w:"subway"}],
+    sents:[
+      {s:"I do not ride a scooter.", pic:"🛵", ds:["✈️","🚌","⛵"]},
+      {s:"My brother does not like airplanes.", pic:"✈️", ds:["🛵","🚇","⛴️"]},
+      {s:"My mom does not drive a car.", pic:"🚌", ds:["✈️","🛵","🚁"]},
+      {s:"I go to school by bus.", pic:"🚌", ds:["⛵","🚁","🚇"]}
+    ],
+    yesno:[
+      {pic:"🚌", ask:"Do you go to school by bus?", ans:"yes"},
+      {pic:"🚁", ask:"Is it a helicopter?", ans:"yes"}
+    ],
+    speak:{words:["bus","airplane","ship"], sents:["I go to school by bus.","I do not ride a scooter."]},
+    spell:["bus","ship","scooter"], missing:["airplane","scooter"],
+    scramble:"I go by bus", scramblePic:"🚌",
+    odd:{list:["airplane","bus","ship","bakery"], odd:"bakery"},
+    story:[
+      {text:"We go to the island by ferry. The ship is very big!", q:"How do we go to the island?", pic:"⛴️", ds:["🚌","🚁"]},
+      {text:"My brother does not like airplanes. He likes the subway!", q:"What does he like?", pic:"🚇", ds:["✈️","🛵"]}
+    ],
+    grammar:[
+      {s:"I ___ ride a scooter.", opts:["don't","doesn't"], a:"don't"},
+      {s:"My brother ___ like airplanes.", opts:["doesn't","don't"], a:"doesn't"},
+      {s:"My mom ___ drive a car.", opts:["doesn't","don't"], a:"doesn't"},
+      {s:"I go to school ___ bus.", opts:["by","on"], a:"by"}
+    ]
+  },
+  c4:{ num:"4", title:"Our Senses", emoji:"👅", zh:"主题：五种感官 — look / sound / taste / feel + 形容词。",
+    words:[{w:"sweet"},{w:"salty"},{w:"sour"},{w:"spicy"},{w:"loud"},{w:"quiet"},{w:"soft"},{w:"hard"}],
+    sents:[
+      {s:"Lemons taste sour.", pic:"🍋", ds:["🍬","🧂","🌶️"]},
+      {s:"Candy tastes sweet.", pic:"🍬", ds:["🍋","🌶️","🧂"]},
+      {s:"The music sounds loud.", pic:"🔊", ds:["🤫","🧸","🪨"]},
+      {s:"The rock feels hard.", pic:"🪨", ds:["🔊","🧸","🍬"]}
+    ],
+    yesno:[
+      {pic:"🍋", ask:"Do lemons taste sour?", ans:"yes"},
+      {pic:"🍬", ask:"Does candy taste salty?", ans:"no"}
+    ],
+    speak:{words:["sweet","sour","loud"], sents:["Lemons taste sour.","The music sounds loud."]},
+    spell:["sweet","loud","hard"], missing:["sweet","loud"],
+    scramble:"It tastes sweet", scramblePic:"🍬",
+    odd:{list:["sweet","salty","spicy","bus"], odd:"bus"},
+    story:[
+      {text:"Look at the ice cream! It tastes sweet and delicious.", q:"How does it taste?", pic:"🍦", ds:["🍋","🌶️"]},
+      {text:"The drum sounds loud. The cat's fur feels soft.", q:"How does the fur feel?", pic:"🧸", ds:["🔊","🪨"]}
+    ],
+    grammar:[
+      {s:"Lemons ___ sour.", opts:["taste","tastes"], a:"taste"},
+      {s:"The music ___ loud.", opts:["sounds","sound"], a:"sounds"},
+      {s:"The rock feels ___.", opts:["hard","soft"], a:"hard"},
+      {s:"Flowers ___ nice.", opts:["smell","smells"], a:"smell"}
+    ]
+  },
+  c5:{ num:"5", title:"Animal Habitats", emoji:"🏜️", zh:"主题：动物栖息地 — 动物住在哪里（A camel lives in the desert.）。",
+    words:[{w:"cave"},{w:"desert"},{w:"forest"},{w:"island"},{w:"snow"},{w:"ocean"}],
+    sents:[
+      {s:"A camel lives in the desert.", pic:"🐪", ds:["🐧","🐠","🦁"]},
+      {s:"A penguin lives in the snow.", pic:"🐧", ds:["🐪","🦁","🐠"]},
+      {s:"Fish live in the ocean.", pic:"🐠", ds:["🐪","🐧","🦁"]},
+      {s:"A lion lives in the forest.", pic:"🦁", ds:["🐠","🐪","🐧"]}
+    ],
+    yesno:[
+      {pic:"🐪", ask:"Does a camel live in the desert?", ans:"yes"},
+      {pic:"🐠", ask:"Does a fish live in the desert?", ans:"no"}
+    ],
+    speak:{words:["desert","ocean","forest"], sents:["A camel lives in the desert.","Fish live in the ocean."]},
+    spell:["desert","ocean","forest"], missing:["desert","ocean"],
+    scramble:"Fish live in the ocean", scramblePic:"🐠",
+    odd:{list:["cave","desert","island","sour"], odd:"sour"},
+    story:[
+      {text:"Look at the habitats! The bear lives in the forest. The camel lives in the desert.", q:"Where does the bear live?", pic:"🌲", ds:["🏜️","🌊"]},
+      {text:"Penguins live where there is snow and ice. Brr!", q:"Where do penguins live?", pic:"❄️", ds:["🏜️","🌲"]}
+    ],
+    grammar:[
+      {s:"A camel ___ in the desert.", opts:["lives","live"], a:"lives"},
+      {s:"Fish ___ in the ocean.", opts:["live","lives"], a:"live"},
+      {s:"Bears live in the ___.", opts:["forest","desert"], a:"forest"},
+      {s:"Penguins live in the ___.", opts:["snow","desert"], a:"snow"}
+    ]
+  },
+  c6:{ num:"6", title:"What's for Dinner?", emoji:"🍚", zh:"主题：晚饭吃什么 — 数量表达（a bag of rice / a glass of juice）。",
+    words:[{w:"bag"},{w:"bottle"},{w:"bowl"},{w:"box"},{w:"can"},{w:"glass"},{w:"jar"}],
+    sents:[
+      {s:"a bag of rice", pic:"🛍️", ds:["🥣","📦","🥫"]},
+      {s:"a glass of juice", pic:"🥛", ds:["🛍️","🍯","🧴"]},
+      {s:"a bowl of sugar", pic:"🥣", ds:["🥛","📦","🛍️"]},
+      {s:"a can of soda", pic:"🥫", ds:["🍯","🧴","🥣"]}
+    ],
+    yesno:[
+      {pic:"🥣", ask:"Is it a bowl of sugar?", ans:"yes"},
+      {pic:"📦", ask:"Is it a box of cereal?", ans:"yes"}
+    ],
+    speak:{words:["bag","bowl","glass"], sents:["a bag of rice","a glass of juice"]},
+    spell:["bowl","glass","box"], missing:["bowl","glass"],
+    scramble:"a bag of rice", scramblePic:"🛍️",
+    odd:{list:["bag","bowl","box","camel"], odd:"camel"},
+    story:[
+      {text:"Mom makes dinner. She needs a bag of rice and a bottle of oil.", q:"How much rice?", pic:"🛍️", ds:["🥣","🧴"]},
+      {text:"I drink a glass of juice. Yum! There is a jar of olives, too.", q:"What do I drink?", pic:"🥛", ds:["🍯","🛍️"]}
+    ],
+    grammar:[
+      {s:"a bag ___ rice", opts:["of","on"], a:"of"},
+      {s:"a glass ___ juice", opts:["of","on"], a:"of"},
+      {s:"___ of bananas", opts:["Bunch","Bowl"], a:"Bunch"},
+      {s:"a ___ of cereal", opts:["box","can"], a:"box"}
+    ]
+  },
+  c7:{ num:"7", title:"Feeling Fit", emoji:"🏃", zh:"主题：健康生活 — 锻炼、吃水果、休息（Feeling Fit）。",
+    words:[{w:"bone"},{w:"toes"},{w:"fingers"},{w:"stomach"},{w:"junk"},{w:"exercise"},{w:"rest"}],
+    sents:[
+      {s:"I eat fruit and vegetables.", pic:"🥕", ds:["🍔","🏃","😴"]},
+      {s:"Don't eat junk food!", pic:"🍔", ds:["🥕","💪","😴"]},
+      {s:"I get exercise every day.", pic:"🏃", ds:["🍔","🥕","🦴"]},
+      {s:"I get rest at night.", pic:"😴", ds:["🏃","🍔","🥕"]}
+    ],
+    yesno:[
+      {pic:"🥕", ask:"Should you eat vegetables?", ans:"yes"},
+      {pic:"🍔", ask:"Is junk food healthy?", ans:"no"}
+    ],
+    speak:{words:["exercise","rest","junk"], sents:["I get exercise every day.","Don't eat junk food!"]},
+    spell:["snack","rest","bath"], missing:["exercise","stomach"],
+    scramble:"I get exercise", scramblePic:"🏃",
+    odd:{list:["fruit","exercise","rest","penguin"], odd:"penguin"},
+    story:[
+      {text:"Feeling fit is important! I eat fruit and vegetables. I get exercise, too.", q:"What do I eat?", pic:"🥕", ds:["🍔","🦴"]},
+      {text:"My muscles are strong. I stretch my arms and bend my knees.", q:"What do I stretch?", pic:"💪", ds:["🦴","🍔"]}
+    ],
+    grammar:[
+      {s:"Eat fruit and ___ exercise.", opts:["get","gets"], a:"get"},
+      {s:"Don't eat ___ food.", opts:["junk","junks"], a:"junk"},
+      {s:"I ___ my muscles.", opts:["stretch","stretches"], a:"stretch"},
+      {s:"You need ___.", opts:["rest","rests"], a:"rest"}
+    ]
+  },
+  c8:{ num:"8", title:"Let's Celebrate!", emoji:"🎉", zh:"主题：庆祝节日 — 过去式（Yesterday, my family celebrated...）。",
+    words:[{w:"celebrate"},{w:"costume"},{w:"dance"},{w:"decorations"},{w:"parade"},{w:"party"},{w:"balloons"},{w:"candles"}],
+    sents:[
+      {s:"Yesterday, my family celebrated.", pic:"🎉", ds:["🕯️","🎈","🎭"]},
+      {s:"We danced at the party.", pic:"💃", ds:["🎉","🎪","🎂"]},
+      {s:"The parade was fun!", pic:"🎪", ds:["💃","🎈","🕯️"]},
+      {s:"There were balloons and candles.", pic:"🎈", ds:["🎭","💃","🎪"]}
+    ],
+    yesno:[
+      {pic:"🎉", ask:"Did your family celebrate?", ans:"yes"},
+      {pic:"🎂", ask:"Is it a birthday cake?", ans:"yes"}
+    ],
+    speak:{words:["celebrate","dance","party"], sents:["Yesterday, my family celebrated.","We danced at the party."]},
+    spell:["dance","party","cake"], missing:["celebrate","balloons"],
+    scramble:"We danced at the party", scramblePic:"💃",
+    odd:{list:["party","balloons","candles","cave"], odd:"cave"},
+    story:[
+      {text:"It was Chinese New Year. My family celebrated. We painted everything red!", q:"What did they celebrate?", pic:"🎉", ds:["🎂","🎪"]},
+      {text:"I dressed up in a costume. There was a big feast with cake!", q:"What was there?", pic:"🎂", ds:["🐠","🦷"]}
+    ],
+    grammar:[
+      {s:"Yesterday, my family ___.", opts:["celebrated","celebrates"], a:"celebrated"},
+      {s:"We ___ everything red.", opts:["painted","paint"], a:"painted"},
+      {s:"I ___ a cake yesterday.", opts:["made","make"], a:"made"},
+      {s:"We ___ and danced.", opts:["walked","danced"], a:"danced"}
+    ]
+  },
+  c9:{ num:"9", title:"My Weekend", emoji:"🎣", zh:"主题：我的周末 — 周末活动 What did you do this weekend? 句型。",
+    words:[{w:"fishing"},{w:"skating"},{w:"picnic"},{w:"movies"},{w:"beach"},{w:"hug"}],
+    sents:[
+      {s:"What did you do this weekend?", pic:"🎣", ds:["⛸️","🧺","🎥"]},
+      {s:"I went to the movies.", pic:"🎥", ds:["🎣","🧺","🏖️"]},
+      {s:"We had a picnic at the park.", pic:"🧺", ds:["🎥","⛸️","🎣"]},
+      {s:"I went ice skating!", pic:"⛸️", ds:["🧺","🎥","🏖️"]}
+    ],
+    yesno:[
+      {pic:"🎣", ask:"Did you go fishing?", ans:"yes"},
+      {pic:"🏖️", ask:"Did you go to the beach?", ans:"yes"}
+    ],
+    speak:{words:["fishing","picnic","movies"], sents:["I went to the movies.","We had a picnic."]},
+    spell:["fishing","picnic","movies"], missing:["fishing","picnic"],
+    scramble:"I went to the movies", scramblePic:"🎥",
+    odd:{list:["fishing","picnic","skating","spicy"], odd:"spicy"},
+    story:[
+      {text:"My weekend was exciting! I went fishing with my dad. We caught three fish!", q:"What did I do with Dad?", pic:"🎣", ds:["⛸️","🎥"]},
+      {text:"I usually stay home on Sundays. Sometimes I go to the beach.", q:"Where do I sometimes go?", pic:"🏖️", ds:["📚","🧺"]}
+    ],
+    grammar:[
+      {s:"What ___ you do this weekend?", opts:["did","do"], a:"did"},
+      {s:"I ___ to the museum.", opts:["went","go"], a:"went"},
+      {s:"Did you ___ home?", opts:["stay","stayed"], a:"stay"},
+      {s:"I ___ go fishing.", opts:["usually","use"], a:"usually"}
+    ]
+  }
+};
+var REVIEWS3 = {
+  cR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["c1","c2","c3"]},
+  cR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["c4","c5","c6"]},
+  cR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后解锁下一个级别！", units:["c7","c8","c9"]}
+};
+/* ---------------- LEVEL 4 ---------------- */
+var UNITS4 = {
+  d1:{ num:"1", title:"All in Our Family", emoji:"👴", zh:"主题：一家人 — 比较级 taller than / older than 句型。",
+    words:[{w:"mother"},{w:"father"},{w:"grandmother"},{w:"brother"},{w:"baby"},{w:"old"},{w:"young"},{w:"tall"}],
+    sents:[
+      {s:"Grandpa is taller than Dad.", pic:"👴", ds:["👶","👩","👦"]},
+      {s:"My mom is younger than my dad.", pic:"👩", ds:["👴","👦","👵"]},
+      {s:"My cat is cuter than your cat.", pic:"🐱", ds:["🐶","🐹","🐠"]},
+      {s:"Dad is stronger than me.", pic:"👨", ds:["👶","👵","👧"]}
+    ],
+    yesno:[
+      {pic:"👴", ask:"Is Grandpa taller than Dad?", ans:"yes"},
+      {pic:"👶", ask:"Is the baby older than you?", ans:"no"}
+    ],
+    speak:{words:["old","young","tall"], sents:["Grandpa is taller than Dad.","My mom is younger than my dad."]},
+    spell:["old","tall","baby"], missing:["taller","older"],
+    scramble:"Dad is tall", scramblePic:"👨",
+    odd:{list:["old","young","tall","pizza"], odd:"pizza"},
+    story:[
+      {text:"Look at our family! Grandpa is taller than Dad. Carlos is younger than Mom and Dad.", q:"Who is taller than Dad?", pic:"👴", ds:["👶","👩"]},
+      {text:"My cat is cute. My sister's hamster is smaller than his hamster.", q:"Which is smaller?", pic:"🐹", ds:["🐱","👴"]}
+    ],
+    grammar:[
+      {s:"Grandpa is ___ than Dad.", opts:["taller","tall"], a:"taller"},
+      {s:"I'm ___ than my sister.", opts:["older","old"], a:"older"},
+      {s:"Mom's hair is ___ than Grandma's hair.", opts:["shorter","short"], a:"shorter"},
+      {s:"Carlos is ___ than Mom and Dad.", opts:["younger","young"], a:"younger"}
+    ]
+  },
+  d2:{ num:"2", title:"Fresh Food", emoji:"🥬", zh:"主题：新鲜食物 — have to / has to 句型。",
+    words:[{w:"lettuce"},{w:"tomato"},{w:"onion"},{w:"carrot"},{w:"rice"},{w:"meat"},{w:"corn"}],
+    sents:[
+      {s:"He has to wash the lettuce.", pic:"🥬", ds:["🍅","🍖","🥕"]},
+      {s:"They have to cook lunch.", pic:"🍳", ds:["🥬","🍚","🌱"]},
+      {s:"I don't have to pick vegetables.", pic:"🥕", ds:["🍳","🥬","🌽"]},
+      {s:"She has to weed the garden.", pic:"🌱", ds:["🍅","🍚","🍖"]}
+    ],
+    yesno:[
+      {pic:"🥕", ask:"Do they have to pick carrots?", ans:"yes"},
+      {pic:"🍚", ask:"Does he have to eat rice?", ans:"no"}
+    ],
+    speak:{words:["lettuce","carrot","rice"], sents:["He has to wash the lettuce.","They have to cook lunch."]},
+    spell:["rice","corn","carrot"], missing:["lettuce","tomato"],
+    scramble:"She has to cook", scramblePic:"🍳",
+    odd:{list:["lettuce","tomato","carrot","drum"], odd:"drum"},
+    story:[
+      {text:"Juan wants a garden. First he has to ask his parents. Then he has to buy seeds.", q:"Where does he buy seeds?", pic:"🛒", ds:["🌳","🏠"]},
+      {text:"The vegetables have to get water to grow! Juan waters them every day.", q:"What do the vegetables need?", pic:"💧", ds:["🍕","📕"]}
+    ],
+    grammar:[
+      {s:"She ___ weed the garden.", opts:["has to","have to"], a:"has to"},
+      {s:"They ___ to buy seeds.", opts:["have","has"], a:"have"},
+      {s:"He ___ to wash the lettuce.", opts:["has","have"], a:"has"},
+      {s:"You don't ___ to cook.", opts:["have","had"], a:"have"}
+    ]
+  },
+  d3:{ num:"3", title:"Long Ago and Today", emoji:"🕯️", zh:"主题：过去和现在 — but / instead 和 more + 形容词。",
+    words:[{w:"candles"},{w:"light"},{w:"modern"},{w:"expensive"},{w:"ship"},{w:"airplane"}],
+    sents:[
+      {s:"Long ago, people used candles.", pic:"🕯️", ds:["💡","📱","✈️"]},
+      {s:"Today we use electric lights.", pic:"💡", ds:["🕯️","👗","⛵"]},
+      {s:"Now friends send e-mails on the phone.", pic:"📱", ds:["🕯️","🍚","⛵"]},
+      {s:"Electric light is modern.", pic:"💡", ds:["🕯️","✉️","⛵"]}
+    ],
+    yesno:[
+      {pic:"🕯️", ask:"Did people use candles long ago?", ans:"yes"},
+      {pic:"✈️", ask:"Did people use planes long ago?", ans:"no"}
+    ],
+    speak:{words:["candles","light","modern"], sents:["Long ago, people used candles.","Electric light is modern."]},
+    spell:["light","phone","ship"], missing:["candles","modern"],
+    scramble:"Now we use phones", scramblePic:"📱",
+    odd:{list:["candles","light","phone","panda"], odd:"panda"},
+    story:[
+      {text:"Long ago, families told stories around a fire. Now they talk on phones.", q:"What do families use now?", pic:"📱", ds:["🕯️","⛵"]},
+      {text:"In 1900, people took boats. Now they take planes instead.", q:"What do people take now?", pic:"✈️", ds:["⛵","🕯️"]}
+    ],
+    grammar:[
+      {s:"Long ago, people used candles, ___ today they use electric light.", opts:["but","instead"], a:"but"},
+      {s:"Now they use electric light ___.", opts:["instead","but"], a:"instead"},
+      {s:"Food is more ___ today.", opts:["delicious","deliciously"], a:"delicious"},
+      {s:"Electric cars are more ___ than old cars.", opts:["modern","moderns"], a:"modern"}
+    ]
+  },
+  d4:{ num:"4", title:"Get Well Soon!", emoji:"🤒", zh:"主题：早日康复 — should / shouldn't 提建议句型。",
+    words:[{w:"fever"},{w:"bandage"},{w:"kit"},{w:"tissue"},{w:"sick"}],
+    sents:[
+      {s:"He should use a tissue.", pic:"🤧", ds:["🤒","🩹","😷"]},
+      {s:"She has a fever.", pic:"🤒", ds:["😷","🩹","🤧"]},
+      {s:"You should get a first-aid kit.", pic:"🧰", ds:["🤒","😷","🤧"]},
+      {s:"I scratched my knee.", pic:"🩹", ds:["🤒","😷","🤧"]}
+    ],
+    yesno:[
+      {pic:"🤧", ask:"Should he use a tissue?", ans:"yes"},
+      {pic:"🩹", ask:"Is it a bandage?", ans:"yes"}
+    ],
+    speak:{words:["fever","bandage","sick"], sents:["She has a fever.","He should use a tissue."]},
+    spell:["fever","sick","kit"], missing:["fever","bandage"],
+    scramble:"She is sick", scramblePic:"🤒",
+    odd:{list:["fever","bandage","tissue","panda"], odd:"panda"},
+    story:[
+      {text:"Ling is sick. What should she do? She should stay in bed. She shouldn't go to school.", q:"What should Ling do?", pic:"🛌", ds:["⚽","🍬"]},
+      {text:"The students have muddy hands. They should wash their hands. They shouldn't eat snacks!", q:"What do they need?", pic:"🧼", ds:["🍬","⚽"]}
+    ],
+    grammar:[
+      {s:"Tom is sneezing. He ___ use a tissue.", opts:["should","shouldn't"], a:"should"},
+      {s:"I have a fever. I ___ go to bed.", opts:["should","shouldn't"], a:"should"},
+      {s:"They're tired. They ___ go out to play.", opts:["shouldn't","should"], a:"shouldn't"},
+      {s:"You ___ eat candy before dinner.", opts:["shouldn't","should"], a:"shouldn't"}
+    ]
+  },
+  d5:{ num:"5", title:"My Favorites", emoji:"🏆", zh:"主题：我的最爱 — 最高级 the best / the most interesting。",
+    words:[{w:"dog"},{w:"cat"},{w:"hamster"},{w:"goldfish"},{w:"rabbit"},{w:"turtle"}],
+    sents:[
+      {s:"My dog is the best pet!", pic:"🐶", ds:["🐱","🐹","🐠"]},
+      {s:"The hamster is the cutest pet.", pic:"🐹", ds:["🐶","🐰","🐢"]},
+      {s:"Soccer is the best sport!", pic:"⚽", ds:["🏀","⚾","🐱"]},
+      {s:"Rabbits are the funniest animals.", pic:"🐰", ds:["🐢","🐠","🐶"]}
+    ],
+    yesno:[
+      {pic:"🐰", ask:"Are rabbits the funniest animals?", ans:"yes"},
+      {pic:"🐢", ask:"Is the turtle the fastest animal?", ans:"no"}
+    ],
+    speak:{words:["dog","hamster","rabbit"], sents:["My dog is the best pet!","Rabbits are the funniest animals."]},
+    spell:["best","cat","dog"], missing:["funniest","cutest"],
+    scramble:"Cats are cute", scramblePic:"🐱",
+    odd:{list:["dog","cat","hamster","candle"], odd:"candle"},
+    story:[
+      {text:"My dog Rover is the best dog in the world! He's smarter than other dogs.", q:"What is Rover?", pic:"🐶", ds:["🐱","🐹"]},
+      {text:"Venice is a city. It's one of the most interesting cities in the world!", q:"How is Venice?", pic:"🏙️", ds:["🌋","🐰"]}
+    ],
+    grammar:[
+      {s:"I think snakes are the most ___ animals.", opts:["interesting","interest"], a:"interesting"},
+      {s:"He's the ___ actor on TV.", opts:["funniest","funny"], a:"funniest"},
+      {s:"It's the ___ food on the menu.", opts:["most popular","popular"], a:"most popular"},
+      {s:"My cat is the ___ pet!", opts:["best","good"], a:"best"}
+    ]
+  },
+  d6:{ num:"6", title:"Wonders of the Sea", emoji:"🐬", zh:"主题：海洋奇迹 — must / have to / can't 和 will / won't。",
+    words:[{w:"dolphin"},{w:"octopus"},{w:"shark"},{w:"ocean"},{w:"beach"},{w:"trash"},{w:"recycle"}],
+    sents:[
+      {s:"We have to protect the ocean.", pic:"🌊", ds:["🐬","🦈","🗑️"]},
+      {s:"You can't throw trash in the ocean!", pic:"🗑️", ds:["🌊","🐬","♻️"]},
+      {s:"We must recycle our bottles.", pic:"♻️", ds:["🗑️","🦈","⛵"]},
+      {s:"Dolphins can swim.", pic:"🐬", ds:["🐙","🦈","♻️"]}
+    ],
+    yesno:[
+      {pic:"🐬", ask:"Can dolphins swim?", ans:"yes"},
+      {pic:"🗑️", ask:"Can you throw trash in the ocean?", ans:"no"}
+    ],
+    speak:{words:["dolphin","shark","recycle"], sents:["We have to protect the ocean.","We must recycle our bottles."]},
+    spell:["trash","ocean","dolphin"], missing:["dolphin","octopus"],
+    scramble:"We must recycle", scramblePic:"♻️",
+    odd:{list:["dolphin","shark","octopus","bandage"], odd:"bandage"},
+    story:[
+      {text:"The Green Team will clean up the beach. They will take bicycles, not cars.", q:"How will they travel?", pic:"🚲", ds:["⛵","🦈"]},
+      {text:"Trash is bad for sea animals. Don't throw trash in the ocean!", q:"What is bad for sea animals?", pic:"🗑️", ds:["🐬","♻️"]}
+    ],
+    grammar:[
+      {s:"We ___ protect the sea creatures.", opts:["have to","doesn't"], a:"have to"},
+      {s:"You ___ throw trash.", opts:["can't","can"], a:"can't"},
+      {s:"We ___ recycle our bottles.", opts:["must","can't"], a:"must"},
+      {s:"In the future, people ___ drive cars anymore.", opts:["won't","will"], a:"won't"}
+    ]
+  },
+  d7:{ num:"7", title:"Good Idea!", emoji:"🔋", zh:"主题：好主意 — used to 过去常常句型。",
+    words:[{w:"battery"},{w:"bicycle"},{w:"scissors"},{w:"kit"},{w:"stove"}],
+    sents:[
+      {s:"I used to play outside.", pic:"🌳", ds:["🏠","📱","🛌"]},
+      {s:"These days I play inside.", pic:"🏠", ds:["🌳","⚽","📚"]},
+      {s:"My friend didn't use to have a computer.", pic:"💻", ds:["📱","🌳","🏠"]},
+      {s:"You should recycle batteries.", pic:"🔋", ds:["🚲","✂️","🔥"]}
+    ],
+    yesno:[
+      {pic:"💻", ask:"Did people use to have computers?", ans:"no"},
+      {pic:"🔋", ask:"Should you recycle batteries?", ans:"yes"}
+    ],
+    speak:{words:["battery","bicycle","scissors"], sents:["I used to play outside.","You should recycle batteries."]},
+    spell:["stove","bike","kit"], missing:["battery","scissors"],
+    scramble:"I used to play", scramblePic:"🌳",
+    odd:{list:["battery","scissors","stove","dolphin"], odd:"dolphin"},
+    story:[
+      {text:"Jamie used to live in an apartment. Now he lives in a house.", q:"Where does Jamie live now?", pic:"🏠", ds:["🏙️","🌳"]},
+      {text:"What can you do with a computer? You can play games and do homework.", q:"What can you do on a computer?", pic:"🎮", ds:["🔋","✂️"]}
+    ],
+    grammar:[
+      {s:"How ___ children use to play?", opts:["did","do"], a:"did"},
+      {s:"People ___ use to have computers.", opts:["didn't","don't"], a:"didn't"},
+      {s:"I ___ to play in the park.", opts:["used","use"], a:"used"},
+      {s:"___ you use to watch TV?", opts:["Did","Do"], a:"Did"}
+    ]
+  },
+  d8:{ num:"8", title:"That's Really Interesting!", emoji:"👩‍🏫", zh:"主题：真有趣 — who 从句（a person who helps students）。",
+    words:[{w:"teacher"},{w:"chef"},{w:"doctor"},{w:"scientist"},{w:"farmer"},{w:"pencil"},{w:"cake"}],
+    sents:[
+      {s:"A teacher is a person who helps students.", pic:"👩‍🏫", ds:["👨‍🍳","👩‍🔬","🎂"]},
+      {s:"My mom is a baker who makes cakes.", pic:"🎂", ds:["👩‍🏫","✏️","👨‍🌾"]},
+      {s:"Sara gave me the pencil.", pic:"✏️", ds:["🎂","👩‍⚕️","👨‍🌾"]},
+      {s:"A scientist is a person who studies plants.", pic:"👩‍🔬", ds:["👩‍🏫","✏️","📷"]}
+    ],
+    yesno:[
+      {pic:"👩‍🏫", ask:"Is a teacher a person who helps students?", ans:"yes"},
+      {pic:"✏️", ask:"Did Sara give the cake to me?", ans:"no"}
+    ],
+    speak:{words:["teacher","scientist","pencil"], sents:["A teacher is a person who helps students.","Sara gave me the pencil."]},
+    spell:["cake","pencil","doctor"], missing:["teacher","scientist"],
+    scramble:"My mom is a baker", scramblePic:"🎂",
+    odd:{list:["teacher","doctor","scientist","pizza"], odd:"pizza"},
+    story:[
+      {text:"My brother is a good swimmer who loves diving.", q:"Who loves diving?", pic:"👦", ds:["👵","🎂"]},
+      {text:"Abigail is a fast runner who competes in sports.", q:"Who competes in sports?", pic:"🏃", ds:["🎂","✏️"]}
+    ],
+    grammar:[
+      {s:"A teacher is a person ___ helps students.", opts:["who","which"], a:"who"},
+      {s:"A doctor is someone ___ helps sick people.", opts:["who","which"], a:"who"},
+      {s:"My mom is a baker ___ makes delicious cakes.", opts:["who","which"], a:"who"},
+      {s:"Sara gave the pencil to ___.", opts:["me","I"], a:"me"}
+    ]
+  },
+  d9:{ num:"9", title:"The Science of Fun", emoji:"🔭", zh:"主题：快乐的科学 — The more..., the more... 和 which 从句。",
+    words:[{w:"gravity"},{w:"planet"},{w:"comet"},{w:"galaxy"},{w:"telescope"},{w:"rocket"}],
+    sents:[
+      {s:"Gravity pulls you toward Earth.", pic:"🌍", ds:["🪐","☄️","🔭"]},
+      {s:"A comet moves in the sky.", pic:"☄️", ds:["🌍","🪐","🌌"]},
+      {s:"We look at stars through a telescope.", pic:"🔭", ds:["🚀","🌍","☄️"]},
+      {s:"Astronauts go to space in a rocket.", pic:"🚀", ds:["🔭","🌍","🪐"]}
+    ],
+    yesno:[
+      {pic:"🌍", ask:"Is gravity a force?", ans:"yes"},
+      {pic:"☄️", ask:"Is a comet a planet?", ans:"no"}
+    ],
+    speak:{words:["planet","comet","rocket"], sents:["Gravity pulls you toward Earth.","A comet moves in the sky."]},
+    spell:["planet","comet","rocket"], missing:["planet","comet"],
+    scramble:"The more she reads", scramblePic:"📖",
+    odd:{list:["planet","comet","galaxy","bandage"], odd:"bandage"},
+    story:[
+      {text:"There may be life on other planets. Scientists use telescopes to look.", q:"What do scientists use?", pic:"🔭", ds:["🪐","🎸"]},
+      {text:"The more you pedal, the faster the scooter goes!", q:"What happens when you pedal more?", pic:"🛵", ds:["🐢","📚"]}
+    ],
+    grammar:[
+      {s:"Gravity is the force ___ holds everything in place.", opts:["which","who"], a:"which"},
+      {s:"___ she reads, the more she learns.", opts:["The more","The most"], a:"The more"},
+      {s:"The more we practice English, the ___ we will speak.", opts:["better","best"], a:"better"},
+      {s:"The more you push the swing, the ___ it goes.", opts:["higher","high"], a:"higher"}
+    ]
+  }
+};
+var REVIEWS4 = {
+  dR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["d1","d2","d3"]},
+  dR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["d4","d5","d6"]},
+  dR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后解锁下一个级别！", units:["d7","d8","d9"]}
+};
+/* ---------------- LEVEL 5 ---------------- */
+var UNITS5 = {
+  e1:{ num:"1", title:"Extreme Weather", emoji:"🌪️", zh:"主题：极端天气 — be going to 和 if 从句。",
+    words:[{w:"tornado"},{w:"lightning"},{w:"hurricane"},{w:"flood"},{w:"storm"},{w:"wind"}],
+    sents:[
+      {s:"It's going to rain tomorrow.", pic:"🌧️", ds:["☀️","🌪️","⚡"]},
+      {s:"There's going to be a tornado!", pic:"🌪️", ds:["🌧️","🌀","❄️"]},
+      {s:"I'm going to make a snowman.", pic:"⛄", ds:["🌧️","❄️","⚡"]},
+      {s:"If it rains, I use an umbrella.", pic:"☂️", ds:["🌪️","❄️","☀️"]}
+    ],
+    yesno:[
+      {pic:"🌪️", ask:"Is there going to be a tornado?", ans:"yes"},
+      {pic:"☀️", ask:"Is it going to be cold?", ans:"no"}
+    ],
+    speak:{words:["tornado","lightning","storm"], sents:["It's going to rain tomorrow.","There's going to be a tornado!"]},
+    spell:["flood","storm","wind"], missing:["tornado","flood"],
+    scramble:"It is going to rain", scramblePic:"🌧️",
+    odd:{list:["tornado","hurricane","lightning","guitar"], odd:"guitar"},
+    story:[
+      {text:"We just saw lightning. Next there's going to be thunder!", q:"What's going to happen next?", pic:"⚡", ds:["☀️","🌱"]},
+      {text:"It's hot today. I'm going to go swimming.", q:"What is he going to do?", pic:"🏊", ds:["⛷️","📚"]}
+    ],
+    grammar:[
+      {s:"It's ___ to rain.", opts:["going","go"], a:"going"},
+      {s:"What are they going to ___?", opts:["do","doing"], a:"do"},
+      {s:"I'm ___ to make a snowman.", opts:["going","go"], a:"going"},
+      {s:"___ it going to snow?", opts:["Is","Are"], a:"Is"}
+    ]
+  },
+  e2:{ num:"2", title:"Copycat Animals", emoji:"🦋", zh:"主题：模仿动物 — as ... as 比较和反义疑问句。",
+    words:[{w:"bee"},{w:"frog"},{w:"zebra"},{w:"spider"},{w:"horse"}],
+    sents:[
+      {s:"The frog is as big as my hand.", pic:"🐸", ds:["🐝","🕷️","🦓"]},
+      {s:"A bee is small.", pic:"🐝", ds:["🕷️","🐸","🐆"]},
+      {s:"A cheetah is fast.", pic:"🐆", ds:["🐝","🐸","🦓"]},
+      {s:"Zebras are about as big as horses.", pic:"🦓", ds:["🐝","🐸","🐆"]}
+    ],
+    yesno:[
+      {pic:"🐆", ask:"Is a cheetah faster than an elephant?", ans:"yes"},
+      {pic:"🐝", ask:"Is a bee as big as a horse?", ans:"no"}
+    ],
+    speak:{words:["bee","frog","zebra"], sents:["A bee is small.","The frog is as big as my hand."]},
+    spell:["frog","horse","zebra"], missing:["spider","cheetah"],
+    scramble:"A bee is small", scramblePic:"🐝",
+    odd:{list:["bee","spider","frog","guitar"], odd:"guitar"},
+    story:[
+      {text:"A bee's sting can be dangerous, but a poisonous spider's bite is more dangerous!", q:"Which is more dangerous?", pic:"🕷️", ds:["🐝","🐸"]},
+      {text:"Cheetahs can run at a speed of around 110 kph. Sailfish can swim 110 kph, too.", q:"What can swim 110 kph?", pic:"🐟", ds:["🐆","🐝"]}
+    ],
+    grammar:[
+      {s:"A cheetah is faster ___ an elephant.", opts:["than","as"], a:"than"},
+      {s:"A bee is ___ small as a salamander.", opts:["as","more"], a:"as"},
+      {s:"Some insects are poisonous, ___?", opts:["aren't they","isn't it"], a:"aren't they"},
+      {s:"Copycat animals are amazing, ___?", opts:["aren't they","don't they"], a:"aren't they"}
+    ]
+  },
+  e3:{ num:"3", title:"Music in Our World", emoji:"🎸", zh:"主题：世界音乐 — Have you ever...? 现在完成时。",
+    words:[{w:"guitar"},{w:"piano"},{w:"drums"},{w:"violin"},{w:"song"}],
+    sents:[
+      {s:"Have you ever played the drums?", pic:"🥁", ds:["🎸","🎹","🎻"]},
+      {s:"I've never played the violin.", pic:"🎻", ds:["🥁","🎸","🎤"]},
+      {s:"She sings songs.", pic:"🎤", ds:["🎸","🎹","🥁"]},
+      {s:"He plays the guitar.", pic:"🎸", ds:["🎻","🎤","🎹"]}
+    ],
+    yesno:[
+      {pic:"🎸", ask:"Is it a guitar?", ans:"yes"},
+      {pic:"🎻", ask:"Is it a piano?", ans:"no"}
+    ],
+    speak:{words:["guitar","piano","drums"], sents:["Have you ever played the drums?","He plays the guitar."]},
+    spell:["guitar","piano","song"], missing:["guitar","violin"],
+    scramble:"She plays piano", scramblePic:"🎹",
+    odd:{list:["guitar","piano","drums","desert"], odd:"desert"},
+    story:[
+      {text:"My sister plays the piano every day. She practices more often than I do.", q:"Who practices more often?", pic:"👧", ds:["👦","🎸"]},
+      {text:"Have you ever seen a jazz concert? I have! My dad plays the trumpet.", q:"Who plays the trumpet?", pic:"👨", ds:["👧","🎸"]}
+    ],
+    grammar:[
+      {s:"Have you ___ played the drums?", opts:["ever","never"], a:"ever"},
+      {s:"No, I've ___ played the drums.", opts:["never","ever"], a:"never"},
+      {s:"___ she ever sung in a band?", opts:["Has","Have"], a:"Has"},
+      {s:"Yes, she ___.", opts:["has","have"], a:"has"}
+    ]
+  },
+  e4:{ num:"4", title:"Life Out There", emoji:"🪐", zh:"主题：太空生命 — may / might 和 everyone / anyone。",
+    words:[{w:"planet"},{w:"comet"},{w:"galaxy"},{w:"telescope"},{w:"rocket"}],
+    sents:[
+      {s:"There may be life in space.", pic:"🪐", ds:["🌍","☄️","🌌"]},
+      {s:"We might see a comet.", pic:"☄️", ds:["🪐","🚀","🌍"]},
+      {s:"Scientists use a telescope.", pic:"🔭", ds:["🚀","🪐","☄️"]},
+      {s:"Astronauts go to space in a rocket.", pic:"🚀", ds:["🔭","🌌","🪐"]}
+    ],
+    yesno:[
+      {pic:"🪐", ask:"Are there other planets?", ans:"yes"},
+      {pic:"🚀", ask:"Do astronauts walk to space?", ans:"no"}
+    ],
+    speak:{words:["planet","comet","rocket"], sents:["There may be life in space.","We might see a comet."]},
+    spell:["planet","comet","rocket"], missing:["comet","planet"],
+    scramble:"We might see it", scramblePic:"☄️",
+    odd:{list:["planet","comet","galaxy","angry"], odd:"angry"},
+    story:[
+      {text:"Is there life on other planets? Maybe! Scientists say there might be.", q:"What might be out there?", pic:"👽", ds:["🎸","🍰"]},
+      {text:"Do you know anyone who has seen a comet? I thought it might be a comet!", q:"What did I see?", pic:"☄️", ds:["🪐","🔭"]}
+    ],
+    grammar:[
+      {s:"There ___ be life on other planets.", opts:["may","can"], a:"may"},
+      {s:"We might ___ messages from space.", opts:["receive","receives"], a:"receive"},
+      {s:"___ in this class works hard.", opts:["Everyone","Anyone"], a:"Everyone"},
+      {s:"I don't think ___ wants to live on the moon.", opts:["anyone","someone"], a:"anyone"}
+    ]
+  },
+  e5:{ num:"5", title:"Arts Lost and Found", emoji:"💍", zh:"主题：失落的工艺 — 动名词 Swimming is good exercise.",
+    words:[{w:"jewelry"},{w:"weaving"},{w:"photos"}],
+    sents:[
+      {s:"Swimming is good exercise.", pic:"🏊", ds:["🎨","💃","📷"]},
+      {s:"She likes making jewelry.", pic:"💍", ds:["🏊","💃","📷"]},
+      {s:"I enjoy dancing.", pic:"💃", ds:["💍","🏊","🧶"]},
+      {s:"We like taking photos.", pic:"📷", ds:["💃","💍","🏊"]}
+    ],
+    yesno:[
+      {pic:"💍", ask:"Does she like making jewelry?", ans:"yes"},
+      {pic:"📷", ask:"Do you like taking photos?", ans:"yes"}
+    ],
+    speak:{words:["jewelry","weaving","photos"], sents:["She likes making jewelry.","I enjoy dancing."]},
+    spell:["jewelry","photos","dance"], missing:["jewelry","photos"],
+    scramble:"She likes jewelry", scramblePic:"💍",
+    odd:{list:["jewelry","weaving","photos","hippo"], odd:"hippo"},
+    story:[
+      {text:"Storytelling is one way my family passes down our history. I like telling stories!", q:"What does the family like doing?", pic:"📖", ds:["💍","🏊"]},
+      {text:"My grandmother is good at weaving. Her cloth is beautiful!", q:"What is Grandma good at?", pic:"🧶", ds:["📷","💃"]}
+    ],
+    grammar:[
+      {s:"___ is good exercise.", opts:["Swimming","Swim"], a:"Swimming"},
+      {s:"She likes ___ jewelry.", opts:["making","make"], a:"making"},
+      {s:"They enjoy ___ games together.", opts:["playing","play"], a:"playing"},
+      {s:"I am good at ___ the guitar.", opts:["playing","play"], a:"playing"}
+    ]
+  },
+  e6:{ num:"6", title:"Amazing Plants!", emoji:"🌱", zh:"主题：神奇植物 — 被动语态 Rice is grown... 和 that 从句。",
+    words:[{w:"flowers"},{w:"tree"},{w:"grass"},{w:"rice"},{w:"corn"}],
+    sents:[
+      {s:"Rice is grown in many countries.", pic:"🍚", ds:["🌸","🌳","🌿"]},
+      {s:"These flowers are found in rain forests.", pic:"🌸", ds:["🍚","🌱","🏝️"]},
+      {s:"Corn is eaten by many people.", pic:"🌽", ds:["🌸","🌳","🍚"]},
+      {s:"The rose is a flower that smells nice.", pic:"🌸", ds:["🌳","🍚","🌿"]}
+    ],
+    yesno:[
+      {pic:"🌱", ask:"Are plants grown on farms?", ans:"yes"},
+      {pic:"🌽", ask:"Is corn a flower?", ans:"no"}
+    ],
+    speak:{words:["flowers","tree","rice"], sents:["Rice is grown in many countries.","The rose is a flower that smells nice."]},
+    spell:["flowers","plants","rice"], missing:["flowers","plants"],
+    scramble:"Rice is grown", scramblePic:"🍚",
+    odd:{list:["rice","corn","flowers","violin"], odd:"violin"},
+    story:[
+      {text:"Some plants eat insects! The Venus flytrap catches flies.", q:"What does it catch?", pic:"🐝", ds:["🌸","🍚"]},
+      {text:"Plants need light, air, and water. They are used as medicine, too!", q:"What do plants need?", pic:"💧", ds:["🍕","🎸"]}
+    ],
+    grammar:[
+      {s:"Rice ___ in many countries.", opts:["is grown","grow"], a:"is grown"},
+      {s:"These flowers are ___ only in rain forests.", opts:["found","find"], a:"found"},
+      {s:"Corn is ___ by millions of people.", opts:["eaten","eat"], a:"eaten"},
+      {s:"The Venus flytrap is a plant ___ eats insects.", opts:["that","who"], a:"that"}
+    ]
+  },
+  e7:{ num:"7", title:"Volcanoes", emoji:"🌋", zh:"主题：火山 — If 条件句和 because of。",
+    words:[{w:"volcano"},{w:"storm"},{w:"rain"},{w:"wind"}],
+    sents:[
+      {s:"If it rains, we stay inside.", pic:"🌧️", ds:["🌋","☂️","⚡"]},
+      {s:"The volcano erupts!", pic:"🌋", ds:["🌪️","⛈️","🏝️"]},
+      {s:"Take an umbrella if it rains.", pic:"☂️", ds:["🌋","🌪️","⚡"]},
+      {s:"Because of the storm, we stayed home.", pic:"⛈️", ds:["🌋","☂️","🏝️"]}
+    ],
+    yesno:[
+      {pic:"🌋", ask:"Is a volcano hot?", ans:"yes"},
+      {pic:"☂️", ask:"Do you need an umbrella in the sun?", ans:"no"}
+    ],
+    speak:{words:["volcano","storm","rain"], sents:["The volcano erupts!","If it rains, we stay inside."]},
+    spell:["storm","rain","wind"], missing:["volcano","storm"],
+    scramble:"If it rains", scramblePic:"🌧️",
+    odd:{list:["volcano","storm","rain","goldfish"], odd:"goldfish"},
+    story:[
+      {text:"If a volcano erupts near my house, we will leave. It's too dangerous!", q:"Why will we leave?", pic:"🌋", ds:["🌧️","☂️"]},
+      {text:"Because of the heavy rain, the picnic was canceled. We stayed home.", q:"Why was the picnic canceled?", pic:"🌧️", ds:["🌋","☂️"]}
+    ],
+    grammar:[
+      {s:"If it ___, the students will stay inside.", opts:["rains","will rain"], a:"rains"},
+      {s:"If the volcano erupts, we ___ leave our homes.", opts:["will","would"], a:"will"},
+      {s:"People left their homes ___ of the volcano.", opts:["because","instead"], a:"because"},
+      {s:"___ of the rain, we stayed inside.", opts:["Because","Because of"], a:"Because of"}
+    ]
+  },
+  e8:{ num:"8", title:"Reduce, Reuse, Recycle", emoji:"♻️", zh:"主题：减少使用、重复利用、回收 — 环保表达。",
+    words:[{w:"trash"},{w:"recycle"},{w:"glass"}],
+    sents:[
+      {s:"We must recycle our trash.", pic:"♻️", ds:["🗑️","🔥","🌋"]},
+      {s:"Don't throw trash in the street!", pic:"🗑️", ds:["♻️","🌊","🥤"]},
+      {s:"Glass can be reused.", pic:"🥃", ds:["🗑️","♻️","🥤"]},
+      {s:"When we recycle, we help the Earth.", pic:"🌍", ds:["🗑️","🔥","🥤"]}
+    ],
+    yesno:[
+      {pic:"♻️", ask:"Should we recycle?", ans:"yes"},
+      {pic:"🗑️", ask:"Can you throw trash in the ocean?", ans:"no"}
+    ],
+    speak:{words:["trash","recycle","glass"], sents:["We must recycle our trash.","Don't throw trash in the street!"]},
+    spell:["trash","glass","recycle"], missing:["trash","glass"],
+    scramble:"We can reuse it", scramblePic:"♻️",
+    odd:{list:["trash","recycle","glass","guitar"], odd:"guitar"},
+    story:[
+      {text:"Old cans can be used to make art! We reuse things to be creative.", q:"What can old cans become?", pic:"🎨", ds:["🗑️","🔥"]},
+      {text:"When we reuse shopping bags, we reduce our use of plastic.", q:"What do we reuse?", pic:"🛍️", ds:["🔥","🌍"]}
+    ],
+    grammar:[
+      {s:"Glass can ___ recycled.", opts:["be","is"], a:"be"},
+      {s:"Plastic bottles ___ be put in recycling bins.", opts:["may","are"], a:"may"},
+      {s:"___ we turn off the lights, we conserve energy.", opts:["When","Where"], a:"When"},
+      {s:"When I drink water, I ___ the bottle.", opts:["recycle","recycles"], a:"recycle"}
+    ]
+  },
+  e9:{ num:"9", title:"Cool Vacations!", emoji:"🏖️", zh:"主题：酷假期 — If I lived..., I would... 假设句型。",
+    words:[{w:"beach"},{w:"picnic"},{w:"movies"},{w:"fishing"}],
+    sents:[
+      {s:"We'd go to the beach.", pic:"🏖️", ds:["🛌","🎬","🎣"]},
+      {s:"I'd rather hike in the forest.", pic:"🌲", ds:["🏖️","🎬","🍲"]},
+      {s:"We stay at a nice hotel.", pic:"🏨", ds:["🏖️","🎣","🌲"]},
+      {s:"They went on a safari.", pic:"🦁", ds:["🏨","🏖️","🎣"]}
+    ],
+    yesno:[
+      {pic:"🏖️", ask:"Would you rather go to the beach?", ans:"yes"},
+      {pic:"🏨", ask:"Is it a hotel?", ans:"yes"}
+    ],
+    speak:{words:["beach","picnic","movies"], sents:["We'd go to the beach.","I'd rather hike in the forest."]},
+    spell:["hotel","beach","fishing"], missing:["hotel","beach"],
+    scramble:"We go to the beach", scramblePic:"🏖️",
+    odd:{list:["beach","hotel","fishing","tornado"], odd:"tornado"},
+    story:[
+      {text:"If we went on a safari, we would learn about the animals!", q:"Where would we go?", pic:"🦁", ds:["🏨","🏖️"]},
+      {text:"Your friend wants to study on Saturday. You'd rather play a game than study!", q:"What would you rather do?", pic:"🎮", ds:["📖","🥣"]}
+    ],
+    grammar:[
+      {s:"If I ___ near mountains, I would go hiking.", opts:["lived","live"], a:"lived"},
+      {s:"I ___ swim in the ocean every day.", opts:["would","will"], a:"would"},
+      {s:"I'd ___ go hiking than go sightseeing.", opts:["rather","better"], a:"rather"},
+      {s:"___ you rather visit Mexico or India?", opts:["Would","Do"], a:"Would"}
+    ]
+  }
+};
+var REVIEWS5 = {
+  eR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["e1","e2","e3"]},
+  eR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["e4","e5","e6"]},
+  eR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后解锁下一个级别！", units:["e7","e8","e9"]}
+};
+/* ---------------- LEVEL 6 ---------------- */
+var UNITS6 = {
+  f1:{ num:"1", title:"Exciting Sports", emoji:"⛷️", zh:"主题：刺激运动 — 现在完成进行时（for / since）和强调副词。",
+    words:[{w:"skiing"},{w:"kayaking"},{w:"motocross"},{w:"swimming"},{w:"climbing"},{w:"skateboard"}],
+    sents:[
+      {s:"She has been skateboarding for three years.", pic:"🛹", ds:["⛷️","🛶","🏊"]},
+      {s:"Skiing is very fun.", pic:"⛷️", ds:["🛹","🏍️","🧗"]},
+      {s:"He's been swimming since three o'clock.", pic:"🏊", ds:["⛷️","🛹","🛶"]},
+      {s:"Motocross is super exciting!", pic:"🏍️", ds:["🏊","⛷️","🛶"]}
+    ],
+    yesno:[
+      {pic:"🛹", ask:"Has she been skateboarding for three years?", ans:"yes"},
+      {pic:"⛷️", ask:"Is skiing boring?", ans:"no"}
+    ],
+    speak:{words:["skiing","kayaking","climbing"], sents:["She has been skateboarding for three years.","Skiing is very fun."]},
+    spell:["skiing","climbing","swimming"], missing:["skiing","climbing"],
+    scramble:"Skiing is very fun", scramblePic:"⛷️",
+    odd:{list:["skiing","kayaking","swimming","cheese"], odd:"cheese"},
+    story:[
+      {text:"I love horseback riding. Being on a horse is super fun!", q:"What does she love?", pic:"🐴", ds:["⛷️","🛹"]},
+      {text:"Would you ever go kitesurfing? It's so exciting!", q:"What is so exciting?", pic:"🪁", ds:["🏊","🏍️"]}
+    ],
+    grammar:[
+      {s:"She has been skateboarding ___ three years.", opts:["for","since"], a:"for"},
+      {s:"He hasn't done kitesurfing ___ last July.", opts:["since","for"], a:"since"},
+      {s:"Brakes on a bike are ___ important.", opts:["extremely","extreme"], a:"extremely"},
+      {s:"His tricks are ___ amazing!", opts:["really","real"], a:"really"}
+    ]
+  },
+  f2:{ num:"2", title:"History's a Mystery", emoji:"⚰️", zh:"主题：历史之谜 — 一般过去时的被动语态（was discovered）。",
+    words:[{w:"mummy"},{w:"treasure"},{w:"pirate"},{w:"storm"}],
+    sents:[
+      {s:"The tomb was discovered in 1922.", pic:"⚰️", ds:["💰","🏴","⛈️"]},
+      {s:"The gold was stolen by thieves.", pic:"💰", ds:["⚰️","🏴","⛵"]},
+      {s:"The artifacts were analyzed by a scientist.", pic:"👩‍🔬", ds:["🏴","💰","⚰️"]},
+      {s:"Were his tattoos done by an artist?", pic:"🏴", ds:["💰","⚰️","👩‍🔬"]}
+    ],
+    yesno:[
+      {pic:"⚰️", ask:"Was King Tut's tomb discovered in 1922?", ans:"yes"},
+      {pic:"💰", ask:"Was the gold stolen by pirates?", ans:"no"}
+    ],
+    speak:{words:["pirate","treasure","mummy"], sents:["The tomb was discovered in 1922.","The gold was stolen by thieves."]},
+    spell:["pirate","treasure","storm"], missing:["pirate","treasure"],
+    scramble:"The tomb was found", scramblePic:"⚰️",
+    odd:{list:["mummy","treasure","pirate","skateboard"], odd:"skateboard"},
+    story:[
+      {text:"King Tut's tomb was built in Egypt. It was discovered by Howard Carter.", q:"Who discovered the tomb?", pic:"🕵️", ds:["👑","🏴"]},
+      {text:"Imagine you found an ancient site. Gold coins were found on the floor!", q:"What was found?", pic:"💰", ds:["⚰️","🏴"]}
+    ],
+    grammar:[
+      {s:"The Sphinx ___ in Egypt a very long time ago.", opts:["was built","were built"], a:"was built"},
+      {s:"The people of Pompeii ___ under a volcano.", opts:["were buried","was buried"], a:"were buried"},
+      {s:"Gold treasures ___ in England.", opts:["were found","was found"], a:"were found"},
+      {s:"___ King Tut's tomb discovered in 1922?", opts:["Was","Were"], a:"Was"}
+    ]
+  },
+  f3:{ num:"3", title:"Chocolate!", emoji:"🍫", zh:"主题：巧克力！— 过去进行时（was making）和 so that。",
+    words:[{w:"chocolate"},{w:"sugar"},{w:"book"},{w:"milk"}],
+    sents:[
+      {s:"She was making hot chocolate.", pic:"🍫", ds:["🍬","🥛","🍰"]},
+      {s:"I was reading about the Aztecs.", pic:"📖", ds:["🍫","🥛","🍬"]},
+      {s:"I added sugar so it tastes sweeter.", pic:"🍬", ds:["🍫","📖","🍰"]},
+      {s:"We are eating chocolate ice cream.", pic:"🍦", ds:["🍫","🍬","📖"]}
+    ],
+    yesno:[
+      {pic:"🍫", ask:"Was she making hot chocolate?", ans:"yes"},
+      {pic:"🍦", ask:"Was he eating a book?", ans:"no"}
+    ],
+    speak:{words:["chocolate","sugar","milk"], sents:["She was making hot chocolate.","I was reading about the Aztecs."]},
+    spell:["chocolate","sugar","milk"], missing:["chocolate","sugar"],
+    scramble:"I was reading", scramblePic:"📖",
+    odd:{list:["chocolate","sugar","ice cream","pirate"], odd:"pirate"},
+    story:[
+      {text:"Cacao beans were brought from the Americas to Spain. People began making chocolate!", q:"What did people begin making?", pic:"🍫", ds:["📖","🍬"]},
+      {text:"I was finishing my homework quickly so that I could make hot chocolate.", q:"Why did I finish quickly?", pic:"🍫", ds:["📖","🍬"]}
+    ],
+    grammar:[
+      {s:"She ___ cocoa when she burned her hand.", opts:["was making","made"], a:"was making"},
+      {s:"I added milk so I ___ make a milkshake.", opts:["could","can"], a:"could"},
+      {s:"They put cinnamon on the cake ___ it was in the recipe.", opts:["because","because of"], a:"because"},
+      {s:"He bought a cookbook so that he ___ learn more.", opts:["could","can"], a:"could"}
+    ]
+  },
+  f4:{ num:"4", title:"Water, Water Everywhere", emoji:"💧", zh:"主题：无处不在的水 — 现在完成进行时和 -ever 词。",
+    words:[{w:"water"},{w:"storm"},{w:"ocean"}],
+    sents:[
+      {s:"The glacier has been carving rocks.", pic:"🧊", ds:["💧","🌊","🚰"]},
+      {s:"She's been swimming all day.", pic:"🏊", ds:["🧊","💧","🌊"]},
+      {s:"Water comes from the mountains.", pic:"⛰️", ds:["💧","🏊","🧊"]},
+      {s:"The kids are playing in the puddle.", pic:"💧", ds:["⛰️","🌊","🏊"]}
+    ],
+    yesno:[
+      {pic:"💧", ask:"Is water important?", ans:"yes"},
+      {pic:"🔥", ask:"Is the glacier hot?", ans:"no"}
+    ],
+    speak:{words:["water","ocean","storm"], sents:["She's been swimming all day.","Water comes from the mountains."]},
+    spell:["water","ocean","storm"], missing:["water","storm"],
+    scramble:"We save water", scramblePic:"💧",
+    odd:{list:["water","ice","ocean","violin"], odd:"violin"},
+    story:[
+      {text:"Mom has been soaking her feet in the ocean all afternoon. The water is cold!", q:"Where are Mom's feet?", pic:"🌊", ds:["🧊","⛰️"]},
+      {text:"Whoever invented surfing was very smart! Do whatever you can to save water.", q:"What should we save?", pic:"💧", ds:["🍫","🎸"]}
+    ],
+    grammar:[
+      {s:"She's been swimming ___ three o'clock.", opts:["since","for"], a:"since"},
+      {s:"I have been writing stories ___ ten years.", opts:["for","since"], a:"for"},
+      {s:"___ I go camping, I take water.", opts:["Whenever","Whatever"], a:"Whenever"},
+      {s:"I'll do ___ you want to do.", opts:["whatever","whenever"], a:"whatever"}
+    ]
+  },
+  f5:{ num:"5", title:"It's a Small World", emoji:"🎒", zh:"主题：小小世界 — 转述句（He said that he wanted...）。",
+    words:[{w:"backpack"},{w:"book"},{w:"pencil"}],
+    sents:[
+      {s:"He said that he wanted to study insects.", pic:"🐜", ds:["🔬","📖","🌍"]},
+      {s:"She asked where her backpack was.", pic:"🎒", ds:["🐜","🌍","📖"]},
+      {s:"The teacher asked what the students needed.", pic:"📖", ds:["🎒","🐜","🌍"]},
+      {s:"Water bears are ugly little pink creatures.", pic:"🐜", ds:["🎒","📖","🔬"]}
+    ],
+    yesno:[
+      {pic:"🎒", ask:"Is it a backpack?", ans:"yes"},
+      {pic:"🐜", ask:"Is an ant big?", ans:"no"}
+    ],
+    speak:{words:["backpack","book","pencil"], sents:["He said that he wanted to study insects.","She asked where her backpack was."]},
+    spell:["backpack","book","world"], missing:["backpack","book"],
+    scramble:"She asked me", scramblePic:"🎒",
+    odd:{list:["backpack","book","paper","galaxy"], odd:"galaxy"},
+    story:[
+      {text:"My mom asked if I cleaned my room. I said I was studying!", q:"What did Mom ask?", pic:"🛏️", ds:["🐜","🎒"]},
+      {text:"An axolotl is a strange small Mexican creature. It can live for 15 years!", q:"What is an axolotl?", pic:"🦎", ds:["🐠","🐜"]}
+    ],
+    grammar:[
+      {s:"He said that he ___ to study insects.", opts:["wanted","wants"], a:"wanted"},
+      {s:"She said that flying fish ___ actually fly.", opts:["didn't","don't"], a:"didn't"},
+      {s:"Hummingbirds have ___ colorful feathers.", opts:["beautiful tiny","tiny beautiful"], a:"beautiful tiny"},
+      {s:"The teacher asked if she ___ sick.", opts:["was","is"], a:"was"}
+    ]
+  },
+  f6:{ num:"6", title:"Smart Choices", emoji:"⛑️", zh:"主题：聪明的选择 — 转述命令（told me to wear...）。",
+    words:[{w:"helmet"},{w:"robot"},{w:"phone"},{w:"bike"},{w:"book"}],
+    sents:[
+      {s:"My dad told me to wear my helmet.", pic:"⛑️", ds:["📱","🤖","🚲"]},
+      {s:"Don't drop your new robot!", pic:"🤖", ds:["⛑️","📱","🧸"]},
+      {s:"She asked if I liked the new app.", pic:"📱", ds:["🤖","⛑️","🧸"]},
+      {s:"Miss Gomez told us to close our books.", pic:"📕", ds:["📱","⛑️","🤖"]}
+    ],
+    yesno:[
+      {pic:"⛑️", ask:"Did Dad tell you to wear a helmet?", ans:"yes"},
+      {pic:"🤖", ask:"Should you drop the robot?", ans:"no"}
+    ],
+    speak:{words:["helmet","robot","phone"], sents:["My dad told me to wear my helmet.","Don't drop your new robot!"]},
+    spell:["robot","helmet","phone"], missing:["helmet","robot"],
+    scramble:"Wear your helmet", scramblePic:"⛑️",
+    odd:{list:["helmet","robot","phone","comet"], odd:"comet"},
+    story:[
+      {text:"The customer asked what time the store closed. He wanted a new video game.", q:"What did the customer want?", pic:"🎮", ds:["⛑️","📕"]},
+      {text:"My grandfather told me not to ride my bike too fast. Safety first!", q:"What did Grandpa say?", pic:"🚲", ds:["📱","🎮"]}
+    ],
+    grammar:[
+      {s:"My dad told me ___ my helmet.", opts:["to wear","wear"], a:"to wear"},
+      {s:"Our teacher told us ___ drop our phones.", opts:["not to","to not"], a:"not to"},
+      {s:"The store clerk asked if I ___ the new app.", opts:["liked","likes"], a:"liked"},
+      {s:"Mom asked if I ___ my room.", opts:["cleaned","clean"], a:"cleaned"}
+    ]
+  },
+  f7:{ num:"7", title:"Wonders of the Natural World", emoji:"🕳️", zh:"主题：自然奇观 — 情态动词被动式和 make me nervous。",
+    words:[{w:"cave"},{w:"volcano"},{w:"storm"}],
+    sents:[
+      {s:"The cave is dark and deep.", pic:"🕳️", ds:["🌋","🌴","🏞️"]},
+      {s:"Lava is very hot!", pic:"🌋", ds:["🕳️","🌴","⚓"]},
+      {s:"Bats make me nervous.", pic:"🦇", ds:["🌋","🕳️","🏞️"]},
+      {s:"The jungle can't be entered by car.", pic:"🌴", ds:["🕳️","🌋","🦇"]}
+    ],
+    yesno:[
+      {pic:"🌋", ask:"Is lava hot?", ans:"yes"},
+      {pic:"🕳️", ask:"Is the cave bright?", ans:"no"}
+    ],
+    speak:{words:["cave","volcano","storm"], sents:["The cave is dark and deep.","Bats make me nervous."]},
+    spell:["cave","jungle","storm"], missing:["cave","jungle"],
+    scramble:"Bats make me nervous", scramblePic:"🦇",
+    odd:{list:["cave","volcano","jungle","piano"], odd:"piano"},
+    story:[
+      {text:"Safety gear has to be worn correctly. The tunnel must not be entered without a headlamp!", q:"What must be worn?", pic:"⛑️", ds:["🕳️","🌋"]},
+      {text:"I tripped over the stalagmite as soon as we entered the cave. It made me scared!", q:"How did the cave make me feel?", pic:"😨", ds:["😄","🤩"]}
+    ],
+    grammar:[
+      {s:"Safety gear ___ be checked before we ascend.", opts:["has to","have"], a:"has to"},
+      {s:"The sound of bats can ___ deep in the cave.", opts:["be heard","heard"], a:"be heard"},
+      {s:"The long hike ___ us hungry.", opts:["made","makes"], a:"made"},
+      {s:"Bats ___ me nervous.", opts:["make","makes"], a:"make"}
+    ]
+  },
+  f8:{ num:"8", title:"Robots Rule", emoji:"🤖", zh:"主题：机器人当家 — wish 虚拟语气和将来被动式。",
+    words:[{w:"robot"},{w:"phone"},{w:"computer"},{w:"game"}],
+    sents:[
+      {s:"Robots will be designed to speak many languages.", pic:"🤖", ds:["📱","💻","🎒"]},
+      {s:"I wish I had a robot.", pic:"🤖", ds:["📱","💻","🎮"]},
+      {s:"The robots won't be programmed to smell.", pic:"💻", ds:["🤖","🎒","📱"]},
+      {s:"When the robots were turned on, they began their job.", pic:"🎮", ds:["🤖","💻","📱"]}
+    ],
+    yesno:[
+      {pic:"🤖", ask:"Are robots programmed to help?", ans:"yes"},
+      {pic:"📱", ask:"Do robots need phones?", ans:"no"}
+    ],
+    speak:{words:["robot","phone","computer"], sents:["I wish I had a robot.","Robots will be designed to speak many languages."]},
+    spell:["robot","phone","game"], missing:["robot","phone"],
+    scramble:"Robots will help", scramblePic:"🤖",
+    odd:{list:["robot","phone","computer","mummy"], odd:"mummy"},
+    story:[
+      {text:"The local museum is holding a robot show. Robots from all over the world will be shown!", q:"What will be shown?", pic:"🤖", ds:["🎒","📷"]},
+      {text:"I wish my parents had a robot to help clean the house!", q:"What do I wish for?", pic:"🤖", ds:["📷","🎒"]}
+    ],
+    grammar:[
+      {s:"We wish we ___ a robot to clean the dishes.", opts:["had","have"], a:"had"},
+      {s:"I wish I ___ sleep late every morning.", opts:["could","can"], a:"could"},
+      {s:"Robots ___ be designed to speak many languages.", opts:["will","would"], a:"will"},
+      {s:"They ___ be programmed to do our homework.", opts:["won't","wouldn't"], a:"won't"}
+    ]
+  },
+  f9:{ num:"9", title:"Amazing Adventures at Sea", emoji:"🚢", zh:"主题：海上大冒险 — as soon as 和 It's exciting to... 句型。",
+    words:[{w:"ship"},{w:"pirate"},{w:"sailboat"},{w:"ocean"}],
+    sents:[
+      {s:"The ship hit the iceberg.", pic:"🚢", ds:["⛵","🏴","🌊"]},
+      {s:"As soon as the sun came up, the sailors got to work.", pic:"⛵", ds:["🚢","🏴","🌊"]},
+      {s:"Pirates captured ships.", pic:"🏴", ds:["🚢","⛵","🌊"]},
+      {s:"It's exciting to dive underwater.", pic:"🤿", ds:["🚢","⛵","🏴"]}
+    ],
+    yesno:[
+      {pic:"🚢", ask:"Is it a ship?", ans:"yes"},
+      {pic:"🏴", ask:"Did pirates capture ships?", ans:"yes"}
+    ],
+    speak:{words:["pirate","ship","sailboat"], sents:["The ship hit the iceberg.","Pirates captured ships."]},
+    spell:["pirate","ship","storm"], missing:["pirate","ship"],
+    scramble:"Water poured in", scramblePic:"💧",
+    odd:{list:["ship","pirate","sailboat","piano"], odd:"piano"},
+    story:[
+      {text:"As soon as the ship began to sink, the crew got on the lifeboats.", q:"What did the crew do?", pic:"🚢", ds:["⛵","🏴"]},
+      {text:"Did you find any treasures on your dive? The water was really muddy!", q:"What did you look for?", pic:"💰", ds:["🚢","⛵"]}
+    ],
+    grammar:[
+      {s:"___ the captain saw the pirates, he changed direction.", opts:["As soon as","Because"], a:"As soon as"},
+      {s:"It's ___ to dive underwater.", opts:["exciting","excited"], a:"exciting"},
+      {s:"It's important ___ a life jacket.", opts:["to wear","wearing"], a:"to wear"},
+      {s:"It isn't ___ near an active volcano.", opts:["safe","safely"], a:"safe"}
+    ]
+  }
+};
+var REVIEWS6 = {
+  fR1:{title:"Review 1–3", emoji:"🧭", zh:"复习关卡：第 1–3 课的听、读、写内容，挑战一下吧！", units:["f1","f2","f3"]},
+  fR2:{title:"Review 4–6", emoji:"🏝️", zh:"复习关卡：第 4–6 课的内容，加油！", units:["f4","f5","f6"]},
+  fR3:{title:"Review 7–9", emoji:"🏆", zh:"最终复习：第 7–9 课的内容，通过后获得世界探险家证书！", units:["f7","f8","f9"]}
+};
+var LEVELS = {
+  starter:{ name:"Starter", emoji:"🌍", order:[
+      {id:"u0",kind:"unit"},{id:"u1",kind:"unit"},{id:"u2",kind:"unit"},{id:"u3",kind:"unit"},{id:"u4",kind:"unit"},
+      {id:"r1",kind:"review"},{id:"u5",kind:"unit"},{id:"u6",kind:"unit"},{id:"u7",kind:"unit"},{id:"u8",kind:"unit"},{id:"r2",kind:"review"}
+    ], units:UNITS, reviews:REVIEWS },
+  l1:{ name:"Level 1", emoji:"🎒", order:[
+      {id:"a1",kind:"unit"},{id:"a2",kind:"unit"},{id:"a3",kind:"unit"},{id:"aR1",kind:"review"},
+      {id:"a4",kind:"unit"},{id:"a5",kind:"unit"},{id:"a6",kind:"unit"},{id:"aR2",kind:"review"},
+      {id:"a7",kind:"unit"},{id:"a8",kind:"unit"},{id:"a9",kind:"unit"},{id:"aR3",kind:"review"}
+    ], units:UNITS1, reviews:REVIEWS1 },
+  l2:{ name:"Level 2", emoji:"🚌", order:[
+      {id:"b1",kind:"unit"},{id:"b2",kind:"unit"},{id:"b3",kind:"unit"},{id:"bR1",kind:"review"},
+      {id:"b4",kind:"unit"},{id:"b5",kind:"unit"},{id:"b6",kind:"unit"},{id:"bR2",kind:"review"},
+      {id:"b7",kind:"unit"},{id:"b8",kind:"unit"},{id:"b9",kind:"unit"},{id:"bR3",kind:"review"}
+    ], units:UNITS2, reviews:REVIEWS2 },
+  l3:{ name:"Level 3", emoji:"🏙️", order:[
+      {id:"c1",kind:"unit"},{id:"c2",kind:"unit"},{id:"c3",kind:"unit"},{id:"cR1",kind:"review"},
+      {id:"c4",kind:"unit"},{id:"c5",kind:"unit"},{id:"c6",kind:"unit"},{id:"cR2",kind:"review"},
+      {id:"c7",kind:"unit"},{id:"c8",kind:"unit"},{id:"c9",kind:"unit"},{id:"cR3",kind:"review"}
+    ], units:UNITS3, reviews:REVIEWS3 },
+  l4:{ name:"Level 4", emoji:"👴", order:[
+      {id:"d1",kind:"unit"},{id:"d2",kind:"unit"},{id:"d3",kind:"unit"},{id:"dR1",kind:"review"},
+      {id:"d4",kind:"unit"},{id:"d5",kind:"unit"},{id:"d6",kind:"unit"},{id:"dR2",kind:"review"},
+      {id:"d7",kind:"unit"},{id:"d8",kind:"unit"},{id:"d9",kind:"unit"},{id:"dR3",kind:"review"}
+    ], units:UNITS4, reviews:REVIEWS4 },
+  l5:{ name:"Level 5", emoji:"🌪️", order:[
+      {id:"e1",kind:"unit"},{id:"e2",kind:"unit"},{id:"e3",kind:"unit"},{id:"eR1",kind:"review"},
+      {id:"e4",kind:"unit"},{id:"e5",kind:"unit"},{id:"e6",kind:"unit"},{id:"eR2",kind:"review"},
+      {id:"e7",kind:"unit"},{id:"e8",kind:"unit"},{id:"e9",kind:"unit"},{id:"eR3",kind:"review"}
+    ], units:UNITS5, reviews:REVIEWS5 },
+  l6:{ name:"Level 6", emoji:"🤖", order:[
+      {id:"f1",kind:"unit"},{id:"f2",kind:"unit"},{id:"f3",kind:"unit"},{id:"fR1",kind:"review"},
+      {id:"f4",kind:"unit"},{id:"f5",kind:"unit"},{id:"f6",kind:"unit"},{id:"fR2",kind:"review"},
+      {id:"f7",kind:"unit"},{id:"f8",kind:"unit"},{id:"f9",kind:"unit"},{id:"fR3",kind:"review"}
+    ], units:UNITS6, reviews:REVIEWS6 }
+};
+var LEVEL_ORDER=["starter","l1","l2","l3","l4","l5","l6"];
+function sk(nodeId, stage){ return (P.level||"starter")+"."+nodeId+"."+stage; }
+function isReviewId(id){ var n=NODES.find(function(x){return x.id===id;}); return n ? n.kind==="review" : id.charAt(0)==="r"; }
+function setLevel(lv){
+  P.level=lv;
+  var L=LEVELS[lv];
+  NODES=L.order; UNITS=L.units; REVIEWS=L.reviews;
+  saveProgress();
+}
+function levelUnlocked(lv){
+  return !!LEVELS[lv]; /* free exploration: every book is clickable */
+}
+
+var NODES = [
+  {id:"u0", kind:"unit"}, {id:"u1", kind:"unit"}, {id:"u2", kind:"unit"},
+  {id:"u3", kind:"unit"}, {id:"u4", kind:"unit"}, {id:"r1", kind:"review"},
+  {id:"u5", kind:"unit"}, {id:"u6", kind:"unit"}, {id:"u7", kind:"unit"},
+  {id:"u8", kind:"unit"}, {id:"r2", kind:"review"}
+];
+
+var STAGES = [
+  {key:"listen", emoji:"🎧", name:"Listen",  instr:"Listen and choose!", zh:"🎧 听力任务：听发音选图片；还有两种新玩法——<b>数一数</b>（听数字，选数量）和<b>听音排序</b>（按顺序点图）。听不清可以多听几遍哦！"},
+  {key:"speak",  emoji:"🎤", name:"Speak",   instr:"Say it out loud!",   zh:"🎤 口语任务：先听示范，再点麦克风大声读出来。如果麦克风不能用，就听完点 <b>I said it! 👍</b> 继续。"},
+  {key:"read",   emoji:"📖", name:"Read",    instr:"Read and choose!",   zh:"📖 阅读任务：看图选单词、<b>句子对对看</b>（判断句子和图片是否一致 ✔✖）、<b>翻牌配对</b>（单词卡配图片卡）、找不同类。"},
+  {key:"story",  emoji:"📚", name:"Story",   instr:"Read the story!",    zh:"📚 阅读理解任务：读小故事（可以点喇叭听朗读），然后回答问题。"},
+  {key:"grammar",emoji:"🧩", name:"Grammar", instr:"Choose the right word!", zh:"🧩 语法任务：选出正确的单词填进空格里，把句子补充完整。"},
+  {key:"write",  emoji:"✏️", name:"Write",   instr:"Build the word!",    zh:"✏️ 书写任务：看图提示，点击字母块拼出单词，再把句子排成正确的顺序。"}
+];
+var REVIEW_STAGE = {key:"mix", emoji:"🧭", name:"Review Mix", instr:"Review time!", zh:"🧭 复习任务：听、读、写混在一起，一共 8 题，包含数一数和句子对对看，加油！"};
+
+/* ---------------- helpers ---------------- */
+function $(id){ return document.getElementById(id); }
+function h(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function sample(arr,n){ return shuffle(arr).slice(0,n); }
+function sampleOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function lev(a,b){
+  var m=a.length, n=b.length; if(!m) return n; if(!n) return m;
+  var dp=[]; for(var i=0;i<=m;i++){ dp[i]=[i]; }
+  for(var j=0;j<=n;j++){ dp[0][j]=j; }
+  for(var i=1;i<=m;i++){ for(var j=1;j<=n;j++){
+    dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  }}
+  return dp[m][n];
+}
+function normText(s){ return s.toLowerCase().replace(/[^a-z' ]+/g," ").replace(/\s+/g," ").trim(); }
+function matchScore(target, heard){
+  target=normText(target); heard=normText(heard); if(!heard) return 0;
+  if(target===heard) return 1;
+  if(heard.indexOf(target)>=0 || target.indexOf(heard)>=0) return 0.9;
+  var tw=target.split(" "), hw=heard.split(" "), hit=0;
+  tw.forEach(function(w){ if(hw.indexOf(w)>=0) hit++; });
+  var wordRatio = tw.length? hit/tw.length : 0;
+  var charRatio = 1 - lev(target,heard)/Math.max(target.length,heard.length);
+  return Math.max(wordRatio*0.9, charRatio);
+}
+
+/* ---------------- persistence ---------------- */
+var saved_ok = true;
+function loadProgress(){
+  try{ var raw=localStorage.getItem("owa2_progress"); if(raw) return JSON.parse(raw); }catch(e){}
+  return {stars:{}};
+}
+function saveProgress(){
+  try{ localStorage.setItem("owa2_progress", JSON.stringify(P)); }catch(e){}
+}
+var P = loadProgress();
+/* migrate old unprefixed progress to level-prefixed keys, then activate saved level */
+(function(){
+  var changed=false;
+  if(!P.level){ P.level="starter"; changed=true; }
+  Object.keys(P.stars).forEach(function(k){
+    if(!/^(starter|l[1-6])\./.test(k)){ P.stars["starter."+k]=P.stars[k]; delete P.stars[k]; changed=true; }
+  });
+  if(changed) saveProgress();
+  setLevel(P.level||"starter");
+})();
+
+function nodeDone(id){
+  if(isReviewId(id)) return (P.stars[sk(id,"mix")]||0) > 0;
+  return STAGES.every(function(st){ return (P.stars[sk(id,st.key)]||0) > 0; });
+}
+function nodeStars(id){
+  if(isReviewId(id)) return P.stars[sk(id,"mix")]||0;
+  return STAGES.reduce(function(s,st){ return s+(P.stars[sk(id,st.key)]||0); },0);
+}
+function isUnlocked(idx){
+  if(idx===0) return true;
+  return nodeDone(NODES[idx-1].id);
+}
+function totalStars(){
+  return NODES.reduce(function(s,n){ return s+nodeStars(n.id); },0);
+}
+
+/* ---------------- sound effects ---------------- */
+var audioCtx=null, muted=false;
+function ctxGet(){
+  if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(audioCtx && audioCtx.state==="suspended") audioCtx.resume();
+  return audioCtx;
+}
+function tone(freq, start, dur, type, vol){
+  var c=ctxGet(); if(!c||muted) return;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type||"sine"; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.15, c.currentTime+start);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+start+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(c.currentTime+start); o.stop(c.currentTime+start+dur+0.05);
+}
+var sfx = {
+  click:function(){ tone(660,0,0.07,"triangle",0.1); },
+  correct:function(){ tone(659,0,0.12,"sine",0.18); tone(880,0.12,0.2,"sine",0.18); },
+  wrong:function(){ tone(220,0,0.2,"sawtooth",0.12); },
+  win:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,i*0.13,0.22,"sine",0.18); }); },
+  star:function(){ tone(1200,0,0.15,"sine",0.15); }
+};
+
+/* ---------------- TTS ---------------- */
+var VOICES=[], ttsOK = ("speechSynthesis" in window);
+function loadVoices(){
+  if(!ttsOK) return;
+  VOICES = window.speechSynthesis.getVoices() || [];
+}
+if(ttsOK){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+function pickVoice(){
+  var best=null, bestScore=-1;
+  VOICES.forEach(function(v){
+    if(!/^en/i.test(v.lang)) return;
+    var s=1;
+    if(/US/i.test(v.lang)) s+=2;
+    if(/Google US|Zira|David|Aria|Jenny|Guy/i.test(v.name)) s+=1;
+    if(s>bestScore){ bestScore=s; best=v; }
+  });
+  return best;
+}
+var speakSeq=0, ttsVoiceless=false;
+function flashFallback(text){
+  var qa=$("qarea");
+  if(!qa) return;
+  var fb=h("div","q-center","<br><span class='flash-box'>"+esc(text)+"</span><br><br>");
+  qa.appendChild(fb);
+  setTimeout(function(){ if(fb.parentNode) fb.remove(); }, 2200);
+}
+function speak(text, opts){
+  opts=opts||{};
+  if(!ttsOK || ttsVoiceless){ if(opts.flash) flashFallback(text); if(opts.onend) setTimeout(opts.onend,100); return; }
+  var hasEn = VOICES.some(function(v){ return /^en/i.test(v.lang); });
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  var v=pickVoice(); if(v) u.voice=v;
+  u.lang=(v&&v.lang)||"en-US";
+  u.rate=opts.rate||0.85; u.pitch=1.05;
+  var mySeq=++speakSeq;
+  var started=false;
+  u.onstart=function(){
+    started=true;
+    /* no English voice installed: show the word too so the child can still play */
+    if(opts.flash && !hasEn) flashFallback(text);
+  };
+  u.onend=function(){ if(mySeq===speakSeq && opts.onend) opts.onend(); };
+  u.onerror=function(ev){
+    if(mySeq!==speakSeq) return;
+    var kind = ev && ev.error;
+    if(!started && (!kind || (kind!=="interrupted" && kind!=="canceled"))){
+      ttsVoiceless=true;
+      if(opts.flash) flashFallback(text);
+    }
+    if(opts.onend) opts.onend();
+  };
+  /* if the engine never even starts (embedded browsers without TTS), fall back */
+  setTimeout(function(){
+    if(!started && mySeq===speakSeq && !ttsVoiceless){
+      ttsVoiceless=true;
+      try{ window.speechSynthesis.cancel(); }catch(e){}
+      if(opts.flash) flashFallback(text);
+      if(opts.onend) opts.onend();
+    }
+  },1400);
+  window.speechSynthesis.speak(u);
+}
+
+/* ---------------- confetti ---------------- */
+var CONF_COLORS=["#ff9800","#2fa84f","#1b7ad6","#e74c3c","#f0c14b","#9b59b6"];
+function confetti(n){
+  n=n||50;
+  for(var i=0;i<n;i++){
+    var p=h("div","confetti-piece");
+    p.style.left=Math.random()*100+"vw";
+    p.style.background=sampleOne(CONF_COLORS);
+    p.style.animationDuration=(2.2+Math.random()*1.6)+"s";
+    p.style.animationDelay=(Math.random()*0.5)+"s";
+    p.style.borderRadius=Math.random()>0.5?"50%":"2px";
+    document.body.appendChild(p);
+    setTimeout(function(el){ return function(){ el.remove(); }; }(p), 4600);
+  }
+}
+
+/* ---------------- screen manager ---------------- */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  $(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+
+/* ---------------- map ---------------- */
+function renderMap(){
+  var grid=$("map-grid"); grid.innerHTML="";
+  $("total-stars").textContent="⭐ "+totalStars();
+  var currentIdx=-1;
+  for(var i=0;i<NODES.length;i++){
+    if(isUnlocked(i) && !nodeDone(NODES[i].id)){ currentIdx=i; break; }
+  }
+  NODES.forEach(function(node, i){
+    var meta = node.kind==="unit" ? UNITS[node.id] : REVIEWS[node.id];
+    var unlocked=isUnlocked(i), done=nodeDone(node.id);
+    var el=h("button","node"+(unlocked?"":" locked")+(done?" done":"")+(i===currentIdx?" current":""));
+    el.style.position="relative";
+    var numLabel = node.kind==="unit" ? meta.num : "R";
+    var stars="";
+    if(node.kind==="unit"){
+      var st=STAGES.map(function(s){ var v=P.stars[sk(node.id,s.key)]||0; return v?"⭐":"☆"; }).join("");
+      stars=st;
+    } else {
+      var v2=P.stars[sk(node.id,"mix")]||0;
+      stars = v2? "⭐".repeat(v2) : "☆☆☆";
+    }
+    el.innerHTML = '<span class="n-num">'+numLabel+'</span>'+
+      '<span class="n-emoji">'+meta.emoji+'</span>'+
+      '<span class="n-title">'+meta.title+'</span>'+
+      '<span class="n-stars">'+stars+'</span>';
+    if(done) el.innerHTML+='<span class="badge">🏅</span>';
+    if(!unlocked) el.innerHTML+='<span class="badge">🔒</span>';
+    el.addEventListener("click", function(){
+      if(!unlocked){ sfx.wrong(); el.classList.add("bad"); setTimeout(function(){el.classList.remove("bad");},500); return; }
+      sfx.click();
+      openNode(node.id);
+    });
+    grid.appendChild(el);
+  });
+}
+
+/* ---------------- node / unit screens ---------------- */
+var CURRENT_NODE=null;
+function openNode(id){
+  CURRENT_NODE=id;
+  if(isReviewId(id)){ openStageIntro(id, "mix"); }
+  else{ renderUnit(id); showScreen("s-unit"); }
+}
+
+function renderUnit(id){
+  var u=UNITS[id];
+  $("u-emoji").textContent=u.emoji;
+  $("u-title").textContent="Unit "+u.num+" · "+u.title;
+  $("u-zh").textContent=u.zh;
+  $("unit-stars").textContent="⭐ "+nodeStars(id)+"/"+(STAGES.length*3);
+  var wall=$("wall"); wall.innerHTML="";
+  u.words.forEach(function(wd){
+    var c=h("button","wcard");
+    c.innerHTML='<span class="w-emoji">'+EMOJI[wd.w]+'</span><span class="w-word">'+wd.w+'</span>';
+    c.addEventListener("click", function(){
+      sfx.click(); speak(wd.w);
+      c.classList.add("heard");
+      setTimeout(function(){ c.classList.remove("heard"); }, 1200);
+    });
+    wall.appendChild(c);
+  });
+  var sg=$("stage-grid"); sg.innerHTML="";
+  STAGES.forEach(function(st){
+    var v=P.stars[sk(id,st.key)]||0;
+    var c=h("button","stage-card");
+    var starsTxt="⭐".repeat(v)+"☆".repeat(3-v);
+    c.innerHTML='<div class="st-emoji">'+st.emoji+'</div><div class="st-name">'+st.name+'</div><div class="st-stars">'+starsTxt+'</div>';
+    c.addEventListener("click", function(){ sfx.click(); openStageIntro(id, st.key); });
+    sg.appendChild(c);
+  });
+}
+
+/* ---------------- overlay ---------------- */
+function showOverlay(html){
+  $("overlay-card").innerHTML=html;
+  $("overlay").classList.remove("hidden");
+}
+function hideOverlay(){ $("overlay").classList.add("hidden"); }
+
+/* ---------------- question builders ---------------- */
+function unitWords(u){ return u.words.map(function(w){ return w.w; }); }
+function learnedEmojisUpTo(uid){
+  var pool=[];
+  var idx=NODES.findIndex(function(n){ return n.id===uid; });
+  for(var i=0;i<=idx;i++){
+    var id=NODES[i].id;
+    if(id.charAt(0)==="u") UNITS[id].words.forEach(function(w){ pool.push(EMOJI[w.w]); });
+  }
+  return pool;
+}
+function wordEmoji(w){ return EMOJI[w]; }
+
+function qListenWord(uid){
+  var u=UNITS[uid];
+  var word=sampleOne(unitWords(u));
+  var correct=EMOJI[word];
+  var pool=learnedEmojisUpTo(uid).filter(function(e){ return e!==correct; });
+  var ds=sample(pool,3);
+  while(ds.length<3){ ds.push(sampleOne(Object.values(EMOJI))); }
+  ds=ds.filter(function(e,i){ return ds.indexOf(e)===i && e!==correct; }).slice(0,3);
+  var opts=shuffle([correct].concat(ds));
+  return {type:"listen_word", audio:word, correctEmoji:correct, opts:opts};
+}
+function qListenSent(uid, sent){
+  var u=UNITS[uid];
+  var s=sent||sampleOne(u.sents);
+  var opts=shuffle([s.pic].concat(s.ds));
+  return {type:"listen_sent", audio:s.s, correct:s.pic, opts:opts};
+}
+function qYesNo(uid){
+  var u=UNITS[uid];
+  var v=sampleOne(u.yesno);
+  return {type:"yesno", pic:v.pic, audio:v.ask, ans:v.ans};
+}
+function qReadPicWord(uid){
+  var u=UNITS[uid];
+  var word=sampleOne(unitWords(u));
+  var pool=unitWords(u).concat(learnedEmojisUpTo(uid).length?[]:[]);
+  var allWords=unitWords(u);
+  var ds=sample(allWords.filter(function(w){ return w!==word; }),3);
+  if(ds.length<3){
+    var prev=[];
+    var idx=NODES.findIndex(function(n){ return n.id===uid; });
+    for(var i=0;i<idx;i++){ var id2=NODES[i].id; if(id2.charAt(0)==="u") prev=prev.concat(unitWords(UNITS[id2])); }
+    ds=ds.concat(sample(prev.filter(function(w){ return w!==word && ds.indexOf(w)<0; }), 3-ds.length));
+  }
+  var opts=shuffle([word].concat(ds));
+  return {type:"read_pic_word", pic:EMOJI[word], correct:word, opts:opts};
+}
+function qReadSent(uid, sent){
+  var u=UNITS[uid];
+  var s=sent||sampleOne(u.sents);
+  var opts=shuffle([s.pic].concat(s.ds));
+  return {type:"read_sent", text:s.s, correct:s.pic, opts:opts};
+}
+function qOdd(uid){
+  var u=UNITS[uid];
+  return {type:"odd", list:shuffle(u.odd.list.slice()), odd:u.odd.odd};
+}
+function qMissing(uid, wordOverride){
+  var u=UNITS[uid];
+  var word=wordOverride||sampleOne(u.missing);
+  var idx=1+Math.floor(Math.random()*(word.length-1));
+  if(idx>=word.length) idx=word.length-1;
+  var letter=word[idx];
+  var shown=word.slice(0,idx)+"_"+word.slice(idx+1);
+  var poolSet="aeiou".split("");
+  var ds=sample(poolSet.filter(function(c){ return c!==letter; }),2);
+  var opts=shuffle([letter].concat(ds));
+  return {type:"missing", pic:EMOJI[word], word:word, shown:shown, letter:letter, opts:opts};
+}
+function qSpell(uid, wordOverride){
+  var u=UNITS[uid];
+  var word=wordOverride||sampleOne(u.spell);
+  var extras=sample("abcdefghilmnoprstuw".split("").filter(function(c){ return word.indexOf(c)<0; }),2);
+  var tiles=shuffle(word.split("").concat(extras));
+  return {type:"spell", pic:EMOJI[word], word:word, tiles:tiles};
+}
+function qScramble(uid){
+  var u=UNITS[uid];
+  var words=u.scramble.split(" ");
+  return {type:"scramble", pic:u.scramblePic||u.emoji, words:words, tiles:shuffle(words.slice())};
+}
+function qCount(uid){
+  var u=UNITS[uid];
+  var n=sampleOne(u.nums.n);
+  var pool=[n-2,n-1,n+1,n+2].filter(function(k){ return k>=1 && k<=10; });
+  var ds=sample(pool,2);
+  var opts=shuffle([{e:u.nums.e,n:n}].concat(ds.map(function(k){ return {e:u.nums.e,n:k}; })));
+  return {type:"count", audio:NUMWORDS[n-1], correct:{e:u.nums.e,n:n}, opts:opts};
+}
+function qOrder2(uid){
+  var u=UNITS[uid];
+  var two=sample(unitWords(u),2);
+  var pool=unitWords(u).filter(function(w){ return w!==two[0] && w!==two[1]; });
+  var third=sampleOne(pool);
+  return {type:"order2", seq:two.slice(), opts:shuffle([two[0],two[1],third])};
+}
+function qTrueFalse(uid){
+  var u=UNITS[uid];
+  var s=sampleOne(u.sents);
+  var wrong=Math.random()<0.5;
+  var pic=wrong ? sampleOne(s.ds) : s.pic;
+  return {type:"truefalse", text:s.s, pic:pic, ans:wrong?"no":"yes"};
+}
+function qMemory(uid){
+  var u=UNITS[uid];
+  var ws=sample(unitWords(u),3);
+  var pairs=ws.map(function(w){ return {w:w,e:EMOJI[w]}; });
+  var cards=pairs.map(function(p){ return {k:"w",v:p.w,p:p}; })
+        .concat(pairs.map(function(p){ return {k:"e",v:p.e,p:p}; }));
+  return {type:"memory", pairs:pairs, cards:shuffle(cards)};
+}
+function qStory(uid, item){
+  return {type:"story", text:item.text, q:item.q, pic:item.pic, opts:shuffle([item.pic].concat(item.ds))};
+}
+function qGrammar(uid, item){
+  return {type:"grammar", shown:item.s, opts:shuffle(item.opts.slice()), a:item.a};
+}
+function speakItems(uid){
+  var u=UNITS[uid];
+  var items=[];
+  sample(unitWords(u),3).forEach(function(w){ items.push({type:"speak", kind:"word", text:w, pic:EMOJI[w]}); });
+  sample(u.sents,2).forEach(function(s){
+    items.push({type:"speak", kind:"sent", text:s.s, pic:s.pic});
+  });
+  return shuffle(items).slice(0,5);
+}
+
+function buildQuestions(nodeId, stageKey){
+  if(isReviewId(nodeId)){
+    var rv=REVIEWS[nodeId];
+    var units=rv.units;
+    var pk=function(){ return sampleOne(units); };
+    var pu=pk();
+    var qs=[];
+    qs.push(qListenWord(pk()));
+    qs.push(qListenSent(pk()));
+    qs.push(UNITS[pu].nums ? qCount(pu) : qOrder2(pu));
+    qs.push(qYesNo(pk()));
+    qs.push(qReadPicWord(pk()));
+    qs.push(qTrueFalse(pk()));
+    qs.push(qSpell(pk()));
+    qs.push(qOdd(pk()));
+    return qs;
+  }
+  if(stageKey==="listen"){
+    var u=UNITS[nodeId];
+    var qs2=[];
+    if(u.nums){
+      var nw1=qListenWord(nodeId);
+      var ns1=sample(u.sents,1)[0];
+      qs2.push(nw1);
+      qs2.push(qListenSent(nodeId,ns1));
+      qs2.push(qCount(nodeId));
+      qs2.push(qOrder2(nodeId));
+      if(u.yesno) qs2.push(qYesNo(nodeId));
+      else {
+        var nw2=qListenWord(nodeId), ng=0;
+        while(nw2.audio===nw1.audio && ng<12){ nw2=qListenWord(nodeId); ng++; }
+        qs2.push(nw2);
+      }
+    } else {
+      var w1=qListenWord(nodeId);
+      var w2=qListenWord(nodeId);
+      var guard=0;
+      while(w2.audio===w1.audio && guard<10){ w2=qListenWord(nodeId); guard++; }
+      qs2.push(w1); qs2.push(w2);
+      var sents=sample(u.sents,2);
+      qs2.push(qListenSent(nodeId,sents[0]));
+      qs2.push(qOrder2(nodeId));
+      if(u.yesno) qs2.push(qYesNo(nodeId));
+      else qs2.push(qListenSent(nodeId,sents[1]));
+    }
+    return qs2;
+  }
+  if(stageKey==="speak"){ return speakItems(nodeId); }
+  if(stageKey==="read"){
+    var qs3=[qReadPicWord(nodeId), qTrueFalse(nodeId)];
+    var sents3=sample(UNITS[nodeId].sents,1);
+    qs3.push(qReadSent(nodeId,sents3[0]));
+    qs3.push(qMemory(nodeId));
+    qs3.push(qOdd(nodeId));
+    return qs3;
+  }
+  if(stageKey==="story"){
+    var su=UNITS[nodeId];
+    return shuffle(su.story.slice()).map(function(it){ return qStory(nodeId,it); });
+  }
+  if(stageKey==="grammar"){
+    var gu=UNITS[nodeId];
+    return sample(gu.grammar,4).map(function(it){ return qGrammar(nodeId,it); });
+  }
+  if(stageKey==="write"){
+    var m=sample(UNITS[nodeId].missing,2);
+    var sp=sample(UNITS[nodeId].spell,2);
+    return [qMissing(nodeId,m[0]), qMissing(nodeId,m[1]), qSpell(nodeId,sp[0]), qSpell(nodeId,sp[1]), qScramble(nodeId)];
+  }
+  return [];
+}
+
+/* ---------------- quiz engine ---------------- */
+var Quiz={
+  qs:[], idx:0, score:0, ctxNode:null, ctxStage:null, locked:false,
+  start:function(qs, nodeId, stageKey){
+    this.qs=qs; this.idx=0; this.score=0; this.ctxNode=nodeId; this.ctxStage=stageKey;
+    this.render();
+    showScreen("s-quiz");
+  },
+  stageMeta:function(){
+    if(this.ctxStage==="mix") return REVIEW_STAGE;
+    return STAGES.find(function(s){ return s.key===Quiz.ctxStage; }) || STAGES[0];
+  },
+  render:function(){
+    this.locked=false;
+    var meta=this.stageMeta();
+    $("quiz-instr").textContent=meta.instr;
+    $("quiz-score").textContent="⭐ "+this.score;
+    var dots=$("dots"); dots.innerHTML="";
+    for(var i=0;i<this.qs.length;i++){
+      var d=h("span","dot"+(i<this.idx?" done":(i===this.idx?" now":"")));
+      dots.appendChild(d);
+    }
+    var area=$("qarea"); area.innerHTML="";
+    var q=this.qs[this.idx];
+    q.wrong=false;
+    var self=this;
+    if(q.type==="listen_word"||q.type==="listen_sent") this.renderListen(area,q);
+    else if(q.type==="yesno") this.renderYesNo(area,q);
+    else if(q.type==="read_pic_word") this.renderReadPicWord(area,q);
+    else if(q.type==="read_sent") this.renderReadSent(area,q);
+    else if(q.type==="odd") this.renderOdd(area,q);
+    else if(q.type==="count") this.renderCount(area,q);
+    else if(q.type==="order2") this.renderOrder2(area,q);
+    else if(q.type==="truefalse") this.renderTrueFalse(area,q);
+    else if(q.type==="memory") this.renderMemory(area,q);
+    else if(q.type==="story") this.renderStory(area,q);
+    else if(q.type==="grammar") this.renderGrammar(area,q);
+    else if(q.type==="missing") this.renderMissing(area,q);
+    else if(q.type==="spell") this.renderSpell(area,q);
+    else if(q.type==="scramble") this.renderScramble(area,q);
+    else if(q.type==="speak") this.renderSpeak(area,q);
+  },
+  picHTML:function(pic, cls){
+    if(pic==null) return '<span class="q-pic '+(cls||"")+'">🔤</span>';
+    if(typeof pic==="string") return '<span class="q-pic '+(cls||"")+'">'+pic+'</span>';
+    return '<span class="q-pic '+(pic.big?"":"small-emo")+'">'+pic.e+'</span>';
+  },
+  picEq:function(a,b){ return JSON.stringify(a)===JSON.stringify(b); },
+  optHTML:function(pic){
+    if(pic==null) return "🔤";
+    if(typeof pic==="string") return pic;
+    if(pic.n) return '<span class="group-emo">'+new Array(pic.n+1).join(pic.e)+'</span>';
+    return '<span style="font-size:'+(pic.big?"64px":"34px")+'">'+pic.e+'</span>';
+  },
+  autoSpeak:function(text){
+    setTimeout(function(){ speak(text, {flash:true}); }, 450);
+  },
+  /* --- option based answering --- */
+  bindOptions:function(container, q, sel){
+    var self=this;
+    sel = sel || ".opt";
+    q.revealEl=null;
+    container.querySelectorAll(sel).forEach(function(el){
+      if(el.dataset.correct==="1") q.revealEl=el;
+      el.addEventListener("click", function(){
+        if(self.locked) return;
+        if(el.dataset.correct==="1"){ self.answer(true, el); }
+        else{ self.answer(false, el, q); }
+      });
+    });
+  },
+  answer:function(ok, el, q){
+    if(this.locked) return;
+    q=q||this.qs[this.idx];
+    if(ok){
+      this.locked=true;
+      sfx.correct();
+      if(el) el.classList.add("good");
+      if(!q.wrong) this.score++;
+      $("quiz-score").textContent="⭐ "+this.score;
+      setTimeout(function(){ Quiz.next(); }, 950);
+    } else {
+      sfx.wrong();
+      if(el) el.classList.add("bad");
+      if(q.wrong){
+        this.locked=true;
+        if(q.revealEl) q.revealEl.classList.add("reveal");
+        setTimeout(function(){ Quiz.next(); }, 1500);
+      } else {
+        q.wrong=true;
+        setTimeout(function(){ if(el) el.classList.remove("bad"); }, 600);
+      }
+    }
+  },
+  next:function(){
+    this.idx++;
+    if(this.idx>=this.qs.length){ this.finish(); }
+    else this.render();
+  },
+  /* --- LISTEN --- */
+  renderListen:function(area,q){
+    var wrap=h("div","q-center");
+    var btn=h("button","audio-big","🔊");
+    btn.title="Play";
+    btn.addEventListener("click", function(){
+      speak(q.audio);
+      btn.classList.add("playing");
+      setTimeout(function(){ btn.classList.remove("playing"); },900);
+    });
+    wrap.appendChild(btn);
+    wrap.appendChild(h("div","q-gap"));
+    var grid=h("div","opts");
+    q.opts.forEach(function(pic){
+      var b=h("button","opt");
+      b.innerHTML=Quiz.optHTML(pic);
+      b.dataset.correct = Quiz.picEq(pic,q.correctEmoji||q.correct) ? "1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+    this.autoSpeak(q.audio);
+  },
+  renderYesNo:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    var btn=h("button","audio-big","🔊");
+    btn.addEventListener("click", function(){ speak(q.audio); });
+    wrap.appendChild(btn);
+    var yn=h("div","yesno");
+    var yes=h("button","btn green","Yes ✔");
+    var no=h("button","btn","No ✖");
+    yes.dataset.correct = q.ans==="yes" ? "1":"0";
+    no.dataset.correct = q.ans==="no" ? "1":"0";
+    yn.appendChild(yes); yn.appendChild(no);
+    wrap.appendChild(yn);
+    area.appendChild(wrap);
+    var gridLike={querySelectorAll:function(sel){ return yn.querySelectorAll(sel); }};
+    this.bindOptions(gridLike,q,".btn");
+    this.autoSpeak(q.audio);
+  },
+  /* --- READ --- */
+  renderReadPicWord:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    var grid=h("div","opts words");
+    q.opts.forEach(function(w){
+      var b=h("button","opt","<span class='opt-word'>"+w+"</span>");
+      b.dataset.correct = (w===q.correct)?"1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+  },
+  renderReadSent:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","q-sent-big","“"+q.text+"”"));
+    var grid=h("div","opts");
+    q.opts.forEach(function(pic){
+      var b=h("button","opt");
+      b.innerHTML=Quiz.optHTML(pic);
+      b.dataset.correct = Quiz.picEq(pic,q.correct)?"1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+  },
+  renderOdd:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","q-sent-big","One is different! 🤔"));
+    var grid=h("div","opts words");
+    q.list.forEach(function(w){
+      var b=h("button","opt","<span class='opt-word'>"+w+"</span>");
+      b.dataset.correct=(w===q.odd)?"1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+  },
+  /* --- LISTEN: count --- */
+  renderCount:function(area,q){
+    var wrap=h("div","q-center");
+    var btn=h("button","audio-big","🔊");
+    btn.addEventListener("click", function(){ speak(q.audio); });
+    wrap.appendChild(btn);
+    var grid=h("div","opts");
+    q.opts.forEach(function(pic){
+      var b=h("button","opt");
+      b.innerHTML=Quiz.optHTML(pic);
+      b.dataset.correct = Quiz.picEq(pic,q.correct) ? "1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+    this.autoSpeak(q.audio);
+  },
+  /* --- LISTEN: tap in the heard order --- */
+  renderOrder2:function(area,q){
+    var wrap=h("div","q-center");
+    var btn=h("button","audio-big","🔊");
+    btn.addEventListener("click", function(){ speak(q.seq.join(", ")); });
+    wrap.appendChild(btn);
+    var note=h("div","seq-note","");
+    wrap.appendChild(note);
+    var grid=h("div","opts");
+    var picks=[];
+    var self=this;
+    q.opts.forEach(function(w){
+      var b=h("button","opt",EMOJI[w]);
+      b.addEventListener("click", function(){
+        if(self.locked || b.classList.contains("picked")) return;
+        picks.push(w);
+        b.classList.add("picked");
+        note.textContent=picks.map(function(x){ return EMOJI[x]; }).join(" ➜ ");
+        if(picks.length===2){
+          if(picks[0]===q.seq[0] && picks[1]===q.seq[1]){
+            self.answer(true,null,q);
+          } else {
+            sfx.wrong();
+            if(q.wrong){
+              self.locked=true;
+              note.textContent=q.seq.map(function(x){ return EMOJI[x]; }).join(" ➜ ");
+              setTimeout(function(){ Quiz.next(); },1500);
+            } else {
+              q.wrong=true;
+              setTimeout(function(){
+                picks.length=0;
+                note.textContent="";
+                grid.querySelectorAll(".opt").forEach(function(o){ o.classList.remove("picked"); });
+              },700);
+            }
+          }
+        }
+      });
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.autoSpeak(q.seq.join(", "));
+  },
+  /* --- READ: does the sentence match the picture? --- */
+  renderTrueFalse:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","q-sent-big","“"+q.text+"”"));
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    var yn=h("div","yesno");
+    var yes=h("button","btn green","✔ Right");
+    var no=h("button","btn","✖ Wrong");
+    yes.dataset.correct = q.ans==="yes" ? "1":"0";
+    no.dataset.correct = q.ans==="no" ? "1":"0";
+    yn.appendChild(yes); yn.appendChild(no);
+    wrap.appendChild(yn);
+    area.appendChild(wrap);
+    var gridLike={querySelectorAll:function(sel){ return yn.querySelectorAll(sel); }};
+    this.bindOptions(gridLike,q,".btn");
+  },
+  /* --- READ: memory match word <-> picture --- */
+  renderMemory:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","q-sent-big","Find the pairs! 🃏"));
+    var grid=h("div","mem-grid");
+    var open=null, busy=false, mism=0, matched=0;
+    var self=this;
+    q.cards.forEach(function(c){
+      var b=h("button","mem-card","<span class='mem-word'>?</span>");
+      b.addEventListener("click", function(){
+        if(busy || self.locked || b.classList.contains("done") || b.classList.contains("flip")) return;
+        b.classList.add("flip");
+        b.innerHTML = c.k==="w" ? "<span class='mem-word'>"+c.v+"</span>" : c.v;
+        sfx.click();
+        if(!open){ open={b:b,c:c}; return; }
+        var first=open; open=null;
+        if(first.c.p===c.p && first.c.k!==c.k){
+          first.b.classList.add("done");
+          b.classList.add("done");
+          first.b.classList.remove("flip");
+          b.classList.remove("flip");
+          matched++;
+          sfx.correct();
+          if(matched===q.pairs.length){
+            if(mism>2) q.wrong=true;
+            self.answer(true,null,q);
+          }
+        } else {
+          busy=true; mism++;
+          setTimeout(function(){
+            first.b.classList.remove("flip");
+            first.b.innerHTML="<span class='mem-word'>?</span>";
+            b.classList.remove("flip");
+            b.innerHTML="<span class='mem-word'>?</span>";
+            busy=false;
+          },750);
+        }
+      });
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+  },
+  /* --- STORY: read a mini passage and answer --- */
+  renderStory:function(area,q){
+    var wrap=h("div","q-center");
+    var box=h("div","story-box");
+    box.appendChild(document.createTextNode(q.text));
+    box.appendChild(h("div","q-gap"));
+    var btn=h("button","audio-big","🔊");
+    btn.style.width="56px"; btn.style.height="56px"; btn.style.fontSize="24px";
+    btn.addEventListener("click", function(){ speak(q.text,{rate:0.8}); });
+    box.appendChild(btn);
+    wrap.appendChild(box);
+    wrap.appendChild(h("div","q-gap"));
+    wrap.appendChild(h("div","q-sent-big",q.q));
+    var grid=h("div","opts");
+    q.opts.forEach(function(pic){
+      var b=h("button","opt");
+      b.innerHTML=Quiz.optHTML(pic);
+      b.dataset.correct = Quiz.picEq(pic,q.pic) ? "1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+  },
+  /* --- GRAMMAR: fill in the blank --- */
+  renderGrammar:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","q-word-big",q.shown));
+    var grid=h("div","opts words");
+    q.opts.forEach(function(w){
+      var b=h("button","opt","<span class='opt-word'>"+w+"</span>");
+      b.dataset.correct=(w===q.a)?"1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+    setTimeout(function(){ speak(q.shown.replace("___","mmm"), {rate:0.85}); },450);
+  },
+  /* --- WRITE: missing letter --- */
+  renderMissing:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    wrap.appendChild(h("div","q-word-big",q.shown));
+    var grid=h("div","opts four");
+    q.opts.forEach(function(c){
+      var b=h("button","opt","<span class='opt-word'>"+c+"</span>");
+      b.dataset.correct=(c===q.letter)?"1":"0";
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    area.appendChild(wrap);
+    this.bindOptions(grid,q);
+    setTimeout(function(){ speak(q.word); },450);
+  },
+  /* --- WRITE: spell --- */
+  renderSpell:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    var btn=h("button","audio-big","🔊");
+    btn.style.width="64px"; btn.style.height="64px"; btn.style.fontSize="30px";
+    btn.addEventListener("click", function(){ speak(q.word); });
+    wrap.appendChild(btn);
+    var slots=h("div","slots");
+    var tilesBox=h("div","tiles");
+    var placed=q.word.split("").map(function(){ return null; });
+    for(var i=0;i<q.word.length;i++){
+      var s=h("div","slot","&nbsp;");
+      s.dataset.idx=i;
+      (function(slot){
+        slot.addEventListener("click", function(){
+          if(self.locked) return;
+          var i2=+slot.dataset.idx;
+          if(placed[i2]){
+            var t=tilesBox.querySelector('[data-letter="'+placed[i2]+'"].used');
+            if(t) t.classList.remove("used");
+            slot.innerHTML="&nbsp;";
+            placed[i2]=null;
+            sfx.click();
+          }
+        });
+      })(s);
+      slots.appendChild(s);
+    }
+    var self=this;
+    var check=h("button","btn small green check-row","Check ✔");
+    q.tiles.forEach(function(letter){
+      var t=h("button","tile",letter);
+      t.dataset.letter=letter;
+      t.addEventListener("click", function(){
+        if(self.locked||t.classList.contains("used")) return;
+        var free=-1;
+        for(var i=0;i<placed.length;i++){ if(!placed[i]){ free=i; break; } }
+        if(free<0) return;
+        placed[free]=letter;
+        var slot=slots.querySelector('[data-idx="'+free+'"]');
+        slot.textContent=letter;
+        t.classList.add("used");
+        sfx.click();
+      });
+      tilesBox.appendChild(t);
+    });
+    check.addEventListener("click", function(){
+      if(self.locked) return;
+      if(placed.some(function(x){ return !x; })) return;
+      var guess=placed.join("");
+      if(guess===q.word){ self.answer(true,null,q); }
+      else{
+        if(q.wrong){
+          self.locked=true;
+          slots.querySelectorAll(".slot").forEach(function(s2,i2){ s2.textContent=q.word[i2]; });
+          setTimeout(function(){ Quiz.next(); },1500);
+        } else {
+          q.wrong=true;
+          sfx.wrong();
+          slots.classList.add("bad");
+          setTimeout(function(){ slots.classList.remove("bad"); },500);
+          placed=placed.map(function(x){ return null; });
+          slots.querySelectorAll(".slot").forEach(function(s2){ s2.innerHTML="&nbsp;"; });
+          tilesBox.querySelectorAll(".tile").forEach(function(t2){ t2.classList.remove("used"); });
+        }
+      }
+    });
+    wrap.appendChild(slots);
+    wrap.appendChild(tilesBox);
+    wrap.appendChild(check);
+    area.appendChild(wrap);
+    setTimeout(function(){ speak(q.word); },450);
+  },
+  /* --- WRITE: sentence scramble --- */
+  renderScramble:function(area,q){
+    var wrap=h("div","q-center");
+    wrap.appendChild(h("div","",this.picHTML(q.pic)));
+    var slots=h("div","slots");
+    var tilesBox=h("div","tiles");
+    var placed=q.words.map(function(){ return null; });
+    var self=this;
+    for(var i=0;i<q.words.length;i++){
+      var s=h("div","slot sent","&nbsp;");
+      s.dataset.idx=i;
+      (function(slot){
+        slot.addEventListener("click", function(){
+          if(self.locked) return;
+          var i2=+slot.dataset.idx;
+          if(placed[i2]){
+            var t=tilesBox.querySelector('[data-word="'+placed[i2]+'"].used');
+            if(t) t.classList.remove("used");
+            slot.innerHTML="&nbsp;";
+            placed[i2]=null;
+            sfx.click();
+          }
+        });
+      })(s);
+      slots.appendChild(s);
+    }
+    q.tiles.forEach(function(w){
+      var t=h("button","tile word",w);
+      t.dataset.word=w;
+      t.addEventListener("click", function(){
+        if(self.locked||t.classList.contains("used")) return;
+        var free=-1;
+        for(var i=0;i<placed.length;i++){ if(!placed[i]){ free=i; break; } }
+        if(free<0) return;
+        placed[free]=w;
+        slots.querySelector('[data-idx="'+free+'"]').textContent=w;
+        t.classList.add("used");
+        sfx.click();
+      });
+      tilesBox.appendChild(t);
+    });
+    var check=h("button","btn small green check-row","Check ✔");
+    check.addEventListener("click", function(){
+      if(self.locked) return;
+      if(placed.some(function(x){ return !x; })) return;
+      var guess=placed.filter(Boolean).join(" ");
+      if(guess===q.words.join(" ")){ self.answer(true,null,q); }
+      else{
+        if(q.wrong){
+          self.locked=true;
+          slots.querySelectorAll(".slot").forEach(function(s2,i2){ s2.textContent=q.words[i2]; });
+          setTimeout(function(){ Quiz.next(); },1600);
+        } else {
+          q.wrong=true;
+          sfx.wrong();
+          placed=placed.map(function(){ return null; });
+          slots.querySelectorAll(".slot").forEach(function(s2){ s2.innerHTML="&nbsp;"; });
+          tilesBox.querySelectorAll(".tile").forEach(function(t2){ t2.classList.remove("used"); });
+        }
+      }
+    });
+    wrap.appendChild(slots);
+    wrap.appendChild(tilesBox);
+    wrap.appendChild(check);
+    area.appendChild(wrap);
+  },
+  /* --- SPEAK --- */
+  renderSpeak:function(area,q){
+    var wrap=h("div","q-center");
+    var card=h("div","speak-target");
+    card.innerHTML='<div class="speak-emoji">'+(typeof q.pic==="string"?q.pic:q.pic.e)+'</div>'+
+      '<div class="speak-text">'+esc(q.text)+'</div>';
+    var modelBtn=h("button","btn small blue","🔊 Listen first");
+    modelBtn.addEventListener("click", function(){ speak(q.text); });
+    card.appendChild(h("div","q-gap"));
+    card.appendChild(modelBtn);
+    var status=h("div","speak-status","");
+    var heard=h("div","speak-heard","");
+    card.appendChild(status);
+    card.appendChild(heard);
+    var actionBox=h("div","");
+    card.appendChild(actionBox);
+    wrap.appendChild(card);
+    area.appendChild(wrap);
+
+    var attempts=0;
+    var self=this;
+
+    function success(good){
+      self.locked=true;
+      sfx.correct();
+      status.textContent="Great! 🎉";
+      heard.textContent="";
+      if(good && attempts===0) self.score++;
+      $("quiz-score").textContent="⭐ "+self.score;
+      setTimeout(function(){ Quiz.next(); }, 1100);
+    }
+    function giveUp(){
+      self.locked=true;
+      status.textContent="Good try! ➡️";
+      setTimeout(function(){ Quiz.next(); }, 900);
+    }
+    function renderSelfCheck(){
+      actionBox.innerHTML="";
+      var row=h("div","selfcheck");
+      var ok=h("button","btn small green","I said it! 👍");
+      ok.addEventListener("click", function(){ sfx.click(); success(true); });
+      var again=h("button","btn small blue","🔊 Listen again");
+      again.addEventListener("click", function(){ speak(q.text); });
+      row.appendChild(ok); row.appendChild(again);
+      actionBox.appendChild(row);
+    }
+    function startSR(){
+      status.textContent="🎤 Listening... speak now!";
+      micBtn.classList.add("listening");
+      var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      var rec;
+      try{
+        rec=new SR();
+        rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=3;
+      }catch(e){ srBroken=true; renderSelfCheck(); return; }
+      var got=false;
+      rec.onresult=function(ev){
+        got=true;
+        var best="";
+        for(var i=0;i<ev.results[0].length;i++){ if(ev.results[0][i].transcript.length>best.length) best=ev.results[0][i].transcript; }
+        var sc=matchScore(q.text,best);
+        heard.textContent='I heard: “'+best+'”';
+        micBtn.classList.remove("listening");
+        if(sc>=0.55){ success(sc>=0.9); }
+        else{
+          attempts++;
+          if(attempts>=3){ giveUp(); }
+          else{ status.textContent="Almost! Try again 🎤"; sfx.wrong(); micBtn.classList.remove("listening"); listenAgain(); }
+        }
+      };
+      rec.onerror=function(ev){
+        micBtn.classList.remove("listening");
+        srBroken=true;
+        if(!got){
+          renderSelfCheck();
+          status.textContent="Say it out loud, then tap 👍";
+        }
+      };
+      rec.onend=function(){ micBtn.classList.remove("listening"); };
+      try{ rec.start(); }catch(e){ srBroken=true; renderSelfCheck(); }
+    }
+    function listenAgain(){
+      actionBox.innerHTML="";
+      var micBtn2=h("button","mic-btn","🎤");
+      micBtn2.addEventListener("click", function(){ if(!self.locked) startSR2(micBtn2); });
+      actionBox.appendChild(micBtn2);
+      var tip=h("div","speak-heard","tap the mic and say it!");
+      actionBox.appendChild(tip);
+    }
+    function startSR2(btn){
+      micBtn=btn;
+      startSR();
+    }
+    var srBroken = !(window.SpeechRecognition||window.webkitSpeechRecognition);
+    var micBtn=null;
+    if(!srBroken){
+      var mic=h("button","mic-btn","🎤");
+      mic.addEventListener("click", function(){ if(!self.locked){ micBtn=mic; startSR(); } });
+      actionBox.appendChild(mic);
+      actionBox.appendChild(h("div","speak-heard","tap the mic and say it!"));
+    } else {
+      status.textContent="Listen, then say it out loud!";
+      renderSelfCheck();
+    }
+    setTimeout(function(){ speak(q.text); }, 450);
+  },
+  finish:function(){
+    var total=this.qs.length;
+    var pct=this.score/total;
+    var stars = pct>=1?3 : pct>=0.8?2 : pct>=0.6?1 : 0;
+    var key=sk(this.ctxNode,this.ctxStage);
+    if((P.stars[key]||0)<stars) P.stars[key]=stars;
+    saveProgress();
+    var meta=this.stageMeta();
+    showResult(stars, meta);
+  }
+};
+
+/* ---------------- stage intro ---------------- */
+function openStageIntro(nodeId, stageKey){
+  var meta = stageKey==="mix" ? REVIEW_STAGE : STAGES.find(function(s){ return s.key===stageKey; });
+  var nodeMeta = isReviewId(nodeId) ? REVIEWS[nodeId] : UNITS[nodeId];
+  var numQ = stageKey==="mix" ? 8 : (stageKey==="story" ? 2 : (stageKey==="grammar" ? 4 : 5));
+  var unitLine = isReviewId(nodeId) ? "<b>"+nodeMeta.title+"</b>（"+nodeMeta.zh+"）"
+    : "<b>Unit "+nodeMeta.num+" · "+nodeMeta.title+"</b>";
+  showOverlay(
+    '<div class="oc-emoji">'+meta.emoji+'</div>'+
+    '<h3>'+meta.name+' · '+numQ+' questions</h3>'+
+    '<p>'+unitLine+'<br><br><span style="color:#8a6d3b;">'+meta.zh+'</span></p>'+
+    '<button class="btn" id="oc-start">Start ▶</button> '+
+    '<button class="btn small blue" id="oc-cancel" style="margin-left:6px;">Back</button>'
+  );
+  $("oc-start").addEventListener("click", function(){
+    hideOverlay();
+    sfx.click();
+    var qs=buildQuestions(nodeId, stageKey);
+    Quiz.start(qs, nodeId, stageKey);
+  });
+  $("oc-cancel").addEventListener("click", function(){
+    hideOverlay(); sfx.click();
+  });
+}
+
+/* ---------------- result ---------------- */
+var LAST_RESULT=null;
+function showResult(stars, meta){
+  LAST_RESULT={node:Quiz.ctxNode, stage:Quiz.ctxStage, stars:stars};
+  $("res-emoji").textContent = stars===3?"🥳":stars===2?"😄":stars===1?"🙂":"💪";
+  $("res-msg").textContent = stars===3?"Perfect! ⭐⭐⭐":stars===2?"Great job!":stars===1?"Well done!":"Keep trying!";
+  var box=$("res-stars"); box.innerHTML="";
+  for(var i=0;i<3;i++){
+    var st=h("span","star"+(i<stars?" on":""),"⭐");
+    st.style.animationDelay=(i*0.25)+"s";
+    if(i<stars) setTimeout(sfx.star, 300+i*250);
+    box.appendChild(st);
+  }
+  $("res-zh").innerHTML = stars>0 ? "太棒了！可以再玩一次，挑战更多星星哦！" : "别灰心！再试一次，你一定可以的！";
+  $("res-next").style.display = "inline-block";
+  showScreen("s-result");
+  if(stars>0) sfx.win();
+  if(stars>0) confetti(stars===3?60:30);
+  var node=Quiz.ctxNode;
+  if(nodeDone(node)){
+    setTimeout(function(){
+      if(!isReviewId(node)){
+        var nm=UNITS[node];
+        showOverlay('<div class="oc-emoji">🏅</div><h3>Unit '+nm.num+' Complete!</h3>'+
+          '<p><b>'+nm.title+'</b> 全部任务完成，太厉害了！<br>下一座岛屿已解锁，继续探险吧！🚢</p>'+
+          '<button class="btn" id="oc-ok">Yay! ▶</button>');
+      } else if(node===NODES[NODES.length-1].id){
+        showCert();
+        return;
+      } else {
+        showOverlay('<div class="oc-emoji">🧭</div><h3>Review Complete!</h3>'+
+          '<p>复习关卡完成！继续前进吧 🚢</p><button class="btn" id="oc-ok">OK ▶</button>');
+      }
+      $("oc-ok").addEventListener("click", function(){ hideOverlay(); sfx.click(); renderMap(); showScreen("s-map"); });
+    }, 1400);
+  }
+}
+function showCert(){
+  $("cert-stars").textContent="⭐ "+totalStars()+" stars";
+  showScreen("s-cert");
+  sfx.win();
+  confetti(120);
+}
+
+/* ---------------- events ---------------- */
+var btnStartEl=$("btn-start");
+if(btnStartEl) btnStartEl.addEventListener("click", function(){ sfx.click(); ctxGet(); unlockTTS(); renderMap(); showScreen("s-map"); });
+$("btn-home").addEventListener("click", function(){ sfx.click(); renderLevels(); showScreen("s-title"); });
+function renderLevels(){
+  var g=$("level-grid"); g.innerHTML="";
+  LEVEL_ORDER.forEach(function(lv,i){
+    var L=LEVELS[lv];
+    var c=h("button","lv-card"+(levelUnlocked(lv)?"":" lvlocked"));
+    c.innerHTML='<span class="lv-emoji">'+(L?L.emoji:"🔒")+'</span>'+
+      '<span class="lv-name">'+(L?L.name:("Level "+(i+1)))+'</span>'+
+      (L?"<small>Units 0–8</small>":"<small>Coming soon</small>");
+    c.addEventListener("click", function(){
+      if(!L || !levelUnlocked(lv)){ sfx.wrong(); c.classList.add("lvshake"); setTimeout(function(){c.classList.remove("lvshake");},500); return; }
+      sfx.click(); setLevel(lv); renderMap(); showScreen("s-map");
+    });
+    g.appendChild(c);
+  });
+}
+renderLevels();
+$("btn-mute").addEventListener("click", function(){
+  muted=!muted;
+  $("btn-mute").textContent = muted?"🔇":"🔊";
+});
+$("btn-back-map").addEventListener("click", function(){ sfx.click(); renderMap(); showScreen("s-map"); });
+$("btn-quit").addEventListener("click", function(){
+  sfx.click();
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(CURRENT_NODE && CURRENT_NODE.charAt(0)!=="r"){ renderUnit(CURRENT_NODE); showScreen("s-unit"); }
+  else { renderMap(); showScreen("s-map"); }
+});
+$("btn-reset").addEventListener("click", function(){
+  showOverlay('<div class="oc-emoji">↺</div><h3>Start over?</h3><p>确定要清除所有进度，从头开始吗？</p>'+
+    '<button class="btn" id="oc-yes">Yes</button> <button class="btn small blue" id="oc-no" style="margin-left:6px;">No</button>');
+  $("oc-yes").addEventListener("click", function(){
+    P={stars:{}}; saveProgress(); hideOverlay(); renderMap(); sfx.click();
+  });
+  $("oc-no").addEventListener("click", function(){ hideOverlay(); });
+});
+$("res-replay").addEventListener("click", function(){
+  sfx.click();
+  openStageIntro(LAST_RESULT.node, LAST_RESULT.stage);
+});
+$("res-next").addEventListener("click", function(){
+  sfx.click();
+  var node=LAST_RESULT.node, stage=LAST_RESULT.stage;
+  if(stage==="mix"){ renderMap(); showScreen("s-map"); return; }
+  var i=STAGES.findIndex(function(s){ return s.key===stage; });
+  if(i<STAGES.length-1){ openStageIntro(node, STAGES[i+1].key); }
+  else { renderUnit(node); showScreen("s-unit"); }
+});
+$("res-map").addEventListener("click", function(){
+  sfx.click();
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  renderMap(); showScreen("s-map");
+});
+$("cert-back").addEventListener("click", function(){ sfx.click(); renderMap(); showScreen("s-map"); });
+
+document.addEventListener("click", function(){ ctxGet(); unlockTTS(); }, {once:true});
+document.addEventListener("touchend", function(){ ctxGet(); unlockTTS(); }, {once:true, passive:true});
+
+/* iOS Safari requires the first speak() call to happen inside a user gesture;
+   a silent utterance unlocks the synthesis engine for later auto-play. */
+function unlockTTS(){
+  if(!ttsOK) return;
+  try{
+    var u=new SpeechSynthesisUtterance(" ");
+    u.volume=0; u.rate=1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* init */
+loadVoices();
+setTimeout(loadVoices, 800);
+</script>
+</body>
+</html>
